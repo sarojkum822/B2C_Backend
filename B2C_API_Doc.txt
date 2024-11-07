@@ -408,5 +408,5 @@ Delivery Driver api endpoint
 ---------------------------------------------------------
 
 3.Get Partner by ID
- URL: {{host}}//api/v1/deliveryPartner/profile/{phone}
+ URL: {{host}}/api/v1/deliveryPartner/profile/{phone}
  Method: GET
