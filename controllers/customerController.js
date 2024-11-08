@@ -5,7 +5,7 @@ const mainCollection = "Customer"
 const newUser = async (req, res) => {
   
   try{
-  let { name, phone, email, addresses, age, gender,totalOrders } = req.body;
+  let { name, phone, email, addresses, age, gender } = req.body;
   if(!phone) return res.status(400).json({message:"phone is a required attribute"})
   name=name || 'newUser '+phone
   email=email || ''

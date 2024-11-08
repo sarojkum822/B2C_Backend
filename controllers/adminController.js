@@ -332,8 +332,8 @@ const deliveryInsights = async (req,res)=>{
           ratings: doc.data().ratings,
           totalDeliveries: doc.data().totalDeliveries,
           approved:doc.data().approved,
-          region:doc.data().generalDetails.city
-          
+          region:doc.data().generalDetails.city,
+          approved:doc.data().generalDetails.approved,
          });
     });
 
@@ -462,10 +462,37 @@ const getOneOutlet = async (req, res) => {
   }
 };
 
+const approveDelivery =async(req,res)=>{
+  try {
+    const { delivaryParnerId } = req.body;
+    
+    //  Firestore initialized
+    const db = getFirestore();
+    //get delivery partner
+    const deliveryDocRef = db.collection("Delivery_partner").doc(delivaryParnerId); // Fetch outlet document using outletId
+    const deliveryDoc = await deliveryDocRef.get(); // Get the document snapshot
+    if (!deliveryDoc.exists) {
+      return res.status(404).json({message:"Delivery partner not found"})
+    }
+    const deliveryData = deliveryDoc.data()
+
+    // Update approved field at generalDetails
+    const generalDetails={
+       ...deliveryData.generalDetails,
+       approved:true,
+    }
+    await deliveryDocRef.update({
+      generalDetails
+    });
+  
+    return res.status(200).json({message:"delivery partner approved"});
+  } catch (error) {
+    console.error('Error fetching data:', error.message);
+    return res.status(500).json({ error: 'Failed to fetch data' });
+  }
+}
 
 
 
 
-
-
-export { newOutlet,createOutletPartner,deleteOutletPartner, newDeliveryPartner, unlinkPartner, linkPartner ,customerInsights,deliveryInsights,getAllOutletsWithOrderAndPartners,getOneOutlet}
+export { newOutlet,createOutletPartner,deleteOutletPartner, newDeliveryPartner, unlinkPartner, linkPartner ,customerInsights,deliveryInsights,getAllOutletsWithOrderAndPartners,getOneOutlet,approveDelivery}
