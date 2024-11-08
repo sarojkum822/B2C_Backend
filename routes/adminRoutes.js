@@ -1,6 +1,7 @@
 import express from "express"
 
 import multer from "multer"
+
 import { CloudinaryStorage } from'multer-storage-cloudinary';
 import {cloudinary} from "../utils/cloudinary.js";
 
@@ -11,7 +12,8 @@ import {
   customerInsights,
   deliveryInsights,
   getAllOutletsWithOrderAndPartners,
-  getOneOutlet
+  getOneOutlet,
+  approveDelivery
 } from "../controllers/adminController.js"
 import authenicateUser from "../middleware/authHandler.js"
 const router = express.Router()
@@ -43,5 +45,6 @@ router.route("/addOutletPartner").post( upload.single("img"),createOutletPartner
 router.route("/removeOutletPartner/:userId").delete(deleteOutletPartner) //authenicateUser,
 router.route("/customerInsights").get(customerInsights)
 router.route("/deliveryInsights").get(deliveryInsights)
+router.route("/approveDelivery").patch(approveDelivery)
 export default router
 
