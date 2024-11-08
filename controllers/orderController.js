@@ -138,8 +138,31 @@ const newOrder = async (req, res) => {
         }
       });
     }
+     //Total order of product
+        const productCounts = {
+          "6pc_tray": "E6",
+          "12pc_tray": "E12",
+          "30pc_tray": "E30",
+        };
+        const productRef = db.collection("products");
+        const productsDoc = await productRef.get();
 
-
+        productsDoc.forEach(async (doc) => {
+          const data = doc.data();
+          const productKey = productCounts[data.name];
+        
+          // Check if the product name has a corresponding entry in productCounts
+          if (productKey && products[productKey] != null) {
+            try {
+              // Update the `count` field in the document
+              await doc.ref.update({
+                count: (data.count||0) + (products[productKey]||0),
+              });
+            } catch (error) {
+              console.error(`Error updating count for product ${doc.id}:`, error);
+            }
+          }
+        }); 
 
       // Return success response
       return res.status(200).json({ 
