@@ -47,7 +47,7 @@ router.route("/addOutletPartner").post( upload.single("img"),createOutletPartner
 router.route("/removeOutletPartner/:userId").delete(deleteOutletPartner) //authenicateUser,
 router.route("/customerInsights").get(customerInsights)
 router.route("/deliveryInsights").get(deliveryInsights)
-router.route("/approveDelivery").patch(approveDelivery)
+router.route("/approveDelivery/:id").patch(approveDelivery)
 
 export default router
 

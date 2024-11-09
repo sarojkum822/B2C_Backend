@@ -464,7 +464,7 @@ const getOneOutlet = async (req, res) => {
 
 const approveDelivery =async(req,res)=>{
   try {
-    const { delivaryParnerId } = req.body;
+    const  delivaryParnerId  = req.params.id;
     
     //  Firestore initialized
     const db = getFirestore();
@@ -477,12 +477,10 @@ const approveDelivery =async(req,res)=>{
     const deliveryData = deliveryDoc.data()
 
     // Update approved field at generalDetails
-    const generalDetails={
-       ...deliveryData.generalDetails,
-       approved:true,
-    }
+    
     await deliveryDocRef.update({
-      generalDetails
+      ...deliveryData,
+      approved:true,
     });
   
     return res.status(200).json({message:"delivery partner approved"});
