@@ -333,7 +333,7 @@ const deliveryInsights = async (req,res)=>{
           totalDeliveries: doc.data().totalDeliveries,
           approved:doc.data().approved,
           region:doc.data().generalDetails.city,
-          approved:doc.data().generalDetails.approved,
+          approved:doc.data().approved,
          });
     });
 
