@@ -84,7 +84,6 @@ const deliveryPartnerProfile = async (req, res) => {
     city,
     address,
     languageKnown: languageKnown ? languageKnown.split(',') : [], // Split if sent as a string
-    approved
   };
 
   const docDetails = {
@@ -102,6 +101,11 @@ const deliveryPartnerProfile = async (req, res) => {
     ifscCode
   };
 
+  //total order he delivered
+  const totalOrders = {
+    count:0,
+    orders:[]
+  }
   // Save the data into the Firestore database
   await db.collection(mainCollection).doc(phone).set({
     generalDetails,
@@ -109,7 +113,9 @@ const deliveryPartnerProfile = async (req, res) => {
     bankDetails,
     img,
     totalDeliveries: 0,
-    ratings: 4.5
+    totalOrders,
+    ratings: 4.5,
+    approved
   });
 
   // Send a successful response
