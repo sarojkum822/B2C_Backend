@@ -333,7 +333,6 @@ const deliveryInsights = async (req,res)=>{
           totalDeliveries: doc.data().totalDeliveries,
           approved:doc.data().approved,
           region:doc.data().generalDetails.city,
-          approved:doc.data().approved,
          });
     });
 
@@ -361,7 +360,9 @@ const getAllOutletsWithOrderAndPartners = async (req, res) => {
         name:doc.data().name,
         area:doc.data().address.fullAddress.area,
         outletPartnerId:doc.data().outletPartnerId,
-        contact:doc.data().phNo
+        contact:doc.data().phNo,
+        lat:doc.data().address.coordinates.lat,
+        long:doc.data().address.coordinates.long,
       }));
 
     // Fetch total number of orders from the Order collection

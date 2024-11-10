@@ -1,6 +1,11 @@
 import express from "express"
 import authenicateUser from "../middleware/authHandler.js"
-import { deliveryPartnerProfile,deleteProfile, getDriverrById} from "../controllers/deliveryController.js"
+
+import { deliveryPartnerProfile,
+  deleteProfile,
+  getDriverrById,
+  addRating
+} from "../controllers/deliveryController.js"
 
 import multer from "multer"
 import { CloudinaryStorage } from'multer-storage-cloudinary';
@@ -29,5 +34,6 @@ const upload = multer({ storage });
 router.route("/profile").post(upload.single("img"),deliveryPartnerProfile) //authenicateUser, 
 router.route("/profile/:userId").delete(deleteProfile)
                                 .get(getDriverrById)
+router.route("/:id/rating").patch(addRating)
 
 export default router

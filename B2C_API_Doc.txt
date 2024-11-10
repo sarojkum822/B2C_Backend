@@ -215,14 +215,16 @@ ADMIN api endpoint
             "name": "rohan2",
             "password": "r@1223",
             "ratings": 4.5,
-            "totalDeliveries": 0
+            "totalDeliveries": 0,
+            approved:false
         },
         {
             "id": "6666666667",
             "name": "rohan3",
             "password": "r@1223",
             "ratings": 4.5,
-            "totalDeliveries": 0
+            "totalDeliveries": 0,
+            "approved":true
         }.
          .
          .
@@ -289,6 +291,8 @@ ADMIN api endpoint
             "area": "Downtown",
             "outletPartnerId": "7777777777",
             "contact": "8888888881"
+            "lat":47.01,
+            "long":71.01,
         },
         {
             "id": "OU_2",
@@ -296,6 +300,8 @@ ADMIN api endpoint
             "area": "Downtown",
             "outletPartnerId": "7777777777",
             "contact": "8888888888"
+            "lat":47.01,
+            "long":71.01,
         }
     ]
 }
@@ -368,6 +374,13 @@ ADMIN api endpoint
 
 NOTE:  for 'Latest Orders' use the getOrder route whith this oultet 'id' in query string
 
+8. mark approval to Delovery Partner
+    URL: {{host}}/api/v1/admin/approveDelivery/:{deliveryPartnerID}
+    Method: PATCH
+    
+    res(200):{message:"delivery partner approved"}
+    res(500):{ error: 'Failed to fetch data' }
+
 ___________________________________________________________________________________________
 
 
@@ -410,3 +423,27 @@ Delivery Driver api endpoint
 3.Get Partner by ID
  URL: {{host}}/api/v1/deliveryPartner/profile/{phone}
  Method: GET
+-------------------------------------------------------------------
+4. add rating to Delivery Partner by ID
+   URL: {{host}}/api/v1/deliveryPartner/:{deliveryPartnerID}/rating
+   Method: PATCH
+   example body : {
+    "customerId":"1111111113",
+    "newRating":5
+   }
+
+   res(200): {
+    "message":"Delivery partner rating calculated successfully!",
+    "ratingInfo":{
+        "rating":5,
+        "newCount":1,
+        "customers":[{"id":"1111111113","rating":5}]
+        }
+    }
+    res(404):{
+         message: "Error updating delivery partner rating", 
+         error: error.message 
+    }
+    res(404):{ message: 'Delivery partner not found' }
+    res(404):{ message: 'Customer partner not found' }
+------------------------------------------------------------------------------

@@ -39,6 +39,17 @@ const mainCollection = "Delivery_partner"
 //   res.status(200).json({ message: req.body })
 // }
 
+//calucalte rating 
+function calculateNewRating(currentAverage, currentCount, newRating) {
+  const updatedCount = currentCount + 1;
+  const updatedAverage = ((currentAverage * currentCount) + newRating) / updatedCount;
+  const roundedAverage = Math.round(updatedAverage * 10) / 10;
+  return {
+      newAverage: roundedAverage,
+      newCount: updatedCount
+  };
+}
+
 
 const deliveryPartnerProfile = async (req, res) => {
   // Destructure the flat request body data
@@ -103,8 +114,14 @@ const deliveryPartnerProfile = async (req, res) => {
 
   //total order he delivered
   const totalOrders = {
-    count:0,
-    orders:[]
+    count:2,
+    orders:[{id:"1111111113-1729774085439"},{id:"1111111113-1729790554963"}]
+  }
+  //rating inforamation
+  const ratingInfo = {
+    rating:0,
+    newCount:0,
+    customers:[],
   }
   // Save the data into the Firestore database
   await db.collection(mainCollection).doc(phone).set({
@@ -114,7 +131,7 @@ const deliveryPartnerProfile = async (req, res) => {
     img,
     totalDeliveries: 0,
     totalOrders,
-    ratings: 4.5,
+    ratingInfo,
     approved
   });
 
@@ -188,4 +205,65 @@ const deleteProfile=async (req,res)=>{
   }
 }
 
-export{ deliveryPartnerProfile,deleteProfile,getDriverrById}
+const addRating = async (req, res) => {
+  try {
+      const id = req.params.id;
+      const { customerId, newRating } = req.body;
+
+      // Initialize Firestore
+      const db = getFirestore();
+      const deliveryDocRef = db.collection(mainCollection).doc(id);
+      const deliveryDoc = await deliveryDocRef.get();
+
+      // Check if delivery partner exists
+      if (!deliveryDoc.exists) {
+          return res.status(404).json({ message: 'Delivery partner not found' });
+      }
+      //check customer
+      const customerDocRef = db.collection("Customer").doc(customerId);
+      const customerDoc = await customerDocRef.get()
+      if (!customerDoc.exists) {
+        return res.status(404).json({message:"Customer not found"})
+      }
+
+      const data = deliveryDoc.data();
+
+      // Get current rating and count, initializing to 0 if undefined
+      const currentRating = data.ratingInfo?.rating ?? 0;
+      const currentCount = data.ratingInfo?.newCount ?? 0;
+
+      // Calculate new rating and count
+      const { newAverage, newCount } = calculateNewRating(currentRating, currentCount, newRating);
+
+      // Add new customer rating to array
+      const customer = {
+          id: customerId,
+          rating: newRating
+      };
+      const updatedCustomers = [...(data.ratingInfo?.customers || []), customer];
+
+      // Prepare updated rating information, omitting undefined values
+      const ratingInfo = {
+          rating: newAverage,
+          newCount: newCount,
+          customers: updatedCustomers
+      };
+
+      // Update Firestore document, omitting undefined properties
+      await deliveryDocRef.update({
+          ...data,
+          ratingInfo: {
+              rating: ratingInfo.rating ?? 0,
+              newCount: ratingInfo.newCount ?? 0,
+              customers: ratingInfo.customers
+          }
+      });
+
+      return res.status(200).json({ message: "Delivery partner rating calculated successfully!" ,ratingInfo});
+  } catch (error) {
+      console.error("Error message:", error);
+      return res.status(500).json({ message: "Error updating delivery partner rating", error: error.message });
+  }
+};
+
+export{ deliveryPartnerProfile,deleteProfile,getDriverrById,addRating}
