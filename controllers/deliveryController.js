@@ -252,6 +252,7 @@ const addRating = async (req, res) => {
       // Update Firestore document, omitting undefined properties
       await deliveryDocRef.update({
           ...data,
+          ratings:ratingInfo.rating ?? 0,
           ratingInfo: {
               rating: ratingInfo.rating ?? 0,
               newCount: ratingInfo.newCount ?? 0,

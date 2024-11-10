@@ -13,11 +13,13 @@ import {
   deliveryInsights,
   getAllOutletsWithOrderAndPartners,
   getOneOutlet,
-  approveDelivery
+  approveDelivery,
+  getProductCount
 } from "../controllers/adminController.js"
-import authenicateUser from "../middleware/authHandler.js"
 
+import authenicateUser from "../middleware/authHandler.js"
 import { getFirestore } from "firebase-admin/firestore";
+
 const router = express.Router()
 
 
@@ -48,6 +50,7 @@ router.route("/removeOutletPartner/:userId").delete(deleteOutletPartner) //authe
 router.route("/customerInsights").get(customerInsights)
 router.route("/deliveryInsights").get(deliveryInsights)
 router.route("/approveDelivery/:id").patch(approveDelivery)
+router.route("/getProductCount").get(getProductCount)
 
 export default router
 

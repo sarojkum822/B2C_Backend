@@ -491,7 +491,44 @@ const approveDelivery =async(req,res)=>{
   }
 }
 
+const getProductCount =async(req,res)=>{
+  try {
+    const db = getFirestore();
+    const productDocRef = db.collection("products")
+    const snapshot = await productDocRef.get()
+    
+    if(productDocRef.exists) return res.status(404).json({message:"No product found."})
+      
+    const product =[]
+    //ittrate the colloction docs and add the documnet information to the product
+    snapshot.forEach(doc=>{
+      const data = doc.data()
+      product.push({name:data.name,count:data.count})
+    })
+    
+    res.status(200).json({
+      status:"Success",
+      product
+    })
+
+  } catch (error) {
+    console.error('Error fetching data:', error.message);
+    return res.status(500).json({ error: 'Failed to fetch data' });
+  }
+}
 
 
-
-export { newOutlet,createOutletPartner,deleteOutletPartner, newDeliveryPartner, unlinkPartner, linkPartner ,customerInsights,deliveryInsights,getAllOutletsWithOrderAndPartners,getOneOutlet,approveDelivery}
+export { 
+  newOutlet,
+  createOutletPartner,
+  deleteOutletPartner, 
+  newDeliveryPartner, 
+  unlinkPartner, 
+  linkPartner ,
+  customerInsights,
+  deliveryInsights,
+  getAllOutletsWithOrderAndPartners,
+  getOneOutlet,
+  approveDelivery,
+  getProductCount
+}
