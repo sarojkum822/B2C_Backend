@@ -132,7 +132,8 @@ const deliveryPartnerProfile = async (req, res) => {
     totalDeliveries: 0,
     totalOrders,
     ratingInfo,
-    approved
+    approved,
+    ratings:0,
   });
 
   // Send a successful response
