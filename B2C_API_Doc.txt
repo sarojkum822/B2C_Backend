@@ -430,18 +430,159 @@ Delivery Driver api endpoint
    image: (Attach an image file)
 
  }
--------------------------------------------
 
-2.Delete delivery partner
+1.add General details of delivery partner
+ URL: {{host}}/api/v1/deliveryPartner/personalInformation
+ Method : POST
+
+ example body : {
+   firstName: Raj
+   lastName: Kumar
+   fatherName: Ramesh Kumar
+   dob: 1992-03-15
+   phone: 9876543210
+   secondaryNumber:6666666667
+   bloodGroup: O+
+   city: Mumbai
+   address: 12 Carter Road, Bandra
+   languageKnown: hindi,english,marathi
+   img: (Attach an image file)
+ }
+Responce : 
+  {
+    "status": "success",
+    "message": "personal details submitted successfully."
+  }
+
+NOTE : To create account phone number is required and to upload the documents delivery partner must fill the personal details
+-------------------------------------------
+2. Add Bank details of delivery partner
+   URL: {{host}}/api/v1/deliveryPartner/bankDetails/{delivery Partner id}
+   Method : POST
+
+    example body {
+        "accNo":"347378293847",
+        "accHolderName":"raju",
+        "ifscCode":"SBI00NB001",
+        "bankName":"SBI",
+        "branchName":"branchName"
+    }
+    Responce : 
+    {
+        "status": "success",
+        "message": "Bank details submitted successfully."
+    }
+-------------------------------------------
+3. upload Aadhar document of delivery partner
+   URL: {{host}}/api/v1/deliveryPartner/personalDocs/aadharcard/{delivery Partner id}
+   Method : POST
+
+    example body {
+        front: (Attach an image file)
+        back: (Attach an image file)
+    }
+    Responce : 
+    {
+        "status": "success",
+        "message": "Aadhar document submitted successfully."
+    }
+--------------------------------------------------
+4. upload Pan card document of delivery partner
+   URL: {{host}}/api/v1/deliveryPartner/personalDocs/pancard/{delivery Partner id}
+   Method : POST
+
+    example body {
+        front: (Attach an image file)
+        back: (Attach an image file)
+    }
+    Responce : 
+    {
+        "status": "success",
+        "message": "Aadhar document submitted successfully."
+    }
+------------------------------------------------------------
+5. upload DL card document of delivery partner
+   URL: {{host}}/api/v1/deliveryPartner/personalDocs/dl/{delivery Partner id}
+   Method : POST
+
+    example body {
+        front: (Attach an image file)
+        back: (Attach an image file)
+    }
+    Responce : 
+    {
+        "status": "success",
+        "message": "Aadhar document submitted successfully."
+    }
+------------------------------------------------------------
+
+6. upload Vehicle Registration certificate card document of delivery partner
+   URL: {{host}}/api/v1/deliveryPartner/vehicleDetails/{delivery Partner id}
+   Method : POST
+
+    example body {
+        img: (Attach an image file)
+    }
+    Responce : 
+    {
+        "status": "success",
+        "message": "Vehicle Registration certificate submitted successfully."
+    }
+------------------------------------------------
+7. Generate Id and Password of delivery partner
+    URL: {{host}}/api/v1/deliveryPartner/genidandpassword/{delivery Partner id}
+    Method : POST
+
+    Responce : 
+    {
+    "message": "Id and password generated successfully ",
+    "uid": "721",
+    "password": "rathod@721.in"
+    }
+------------------------------------------------------
+8. Get document status of delivery partner
+   URL: {{host}}/api/v1/deliveryPartner/getdocstatus/{delivery Partner id}
+    Method : GET
+
+    Responce : 
+    {
+        "submissionStatus": {
+            "generalDetails": false,
+            "bankDetails": false,
+            "personalDocs": false,
+            "vehicleDetails": false
+        }
+    }
+----------------------------------------------------------
+9. fetch order history of delivery partner
+    URL: {{host}}/api/v1/deliveryPartner/fetchOrders/{delivery Partner id}
+    Method : GET
+
+    Responce : 
+    {
+    "orders": {
+        "count": 2,
+        "orders": [
+                {
+                    "id": "1111111113-1729774085439"
+                },
+                {
+                    "id": "1111111113-1729790554963"
+                }
+            ]
+        }
+    }
+--------------------------------------------
+10.Delete delivery partner
  URL: {{host}}/api/v1/deliveryPartner/profile/{phone}
  Method: POST
 ---------------------------------------------------------
 
-3.Get Partner by ID
+11.Get Partner by ID
  URL: {{host}}/api/v1/deliveryPartner/profile/{phone}
  Method: GET
 -------------------------------------------------------------------
-4. add rating to Delivery Partner by ID
+12. add rating to Delivery Partner by ID
    URL: {{host}}/api/v1/deliveryPartner/:{deliveryPartnerID}/rating
    Method: PATCH
    example body : {

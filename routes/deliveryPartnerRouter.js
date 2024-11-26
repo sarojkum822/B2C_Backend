@@ -2,6 +2,15 @@ import express from "express"
 import authenicateUser from "../middleware/authHandler.js"
 
 import { deliveryPartnerProfile,
+  personalInformation,
+  generateIdAndPassword,
+  bankDetails,
+  uploadAadharDocs,
+  uploadPanDocs,
+  uploadDLDocs,
+  vehicleDetails,
+  getDocsStatus,
+  fetchAllOrders,
   deleteProfile,
   getDriverrById,
   addRating
@@ -27,11 +36,24 @@ const storage = new CloudinaryStorage({
       ],
     },
     
-  });
+});
 
 const upload = multer({ storage });
 
 router.route("/profile").post(upload.single("img"),deliveryPartnerProfile) //authenicateUser, 
+//prodile details
+router.route("/personalInformation").post(upload.single("img"),personalInformation)
+router.route("/genidandpassword/:id").post(generateIdAndPassword)
+router.route("/bankDetails/:id").post(bankDetails)
+router.route("/personalDocs/aadharcard/:id").post(upload.fields([{ name: 'front', maxCount: 1 },{ name: 'back', maxCount: 1 }]),uploadAadharDocs)
+router.route("/personalDocs/pancard/:id").post(upload.fields([{ name: 'front', maxCount: 1 },{ name: 'back', maxCount: 1 }]),uploadPanDocs)
+router.route("/personalDocs/dl/:id").post(upload.fields([{ name: 'front', maxCount: 1 },{ name: 'back', maxCount: 1 }]),uploadDLDocs)
+router.route("/vehicleDetails/:id").post(upload.single("img"),vehicleDetails)
+router.route("/getdocstatus/:id").get(getDocsStatus)
+
+//get all the orders of delivery partner 
+router.route('/fetchOrders/:id').get(fetchAllOrders)
+
 router.route("/profile/:userId").delete(deleteProfile)
                                 .get(getDriverrById)
 router.route("/:id/rating").patch(addRating)

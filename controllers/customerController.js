@@ -124,6 +124,7 @@ const updateUser = async (req, res) => {
 
     // Append new addresses to existing ones
     else if (addresses && addresses.length > 0) {
+      
       updatedData.addresses = [
         ...updatedData.addresses, // Use the updatedData addresses for removal logic
         ...addresses
