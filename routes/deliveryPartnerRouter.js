@@ -11,6 +11,7 @@ import { deliveryPartnerProfile,
   vehicleDetails,
   getDocsStatus,
   fetchAllOrders,
+  getSpecificOrderDetails,
   deleteProfile,
   getDriverrById,
   addRating
@@ -53,6 +54,7 @@ router.route("/getdocstatus/:id").get(getDocsStatus)
 
 //get all the orders of delivery partner 
 router.route('/fetchOrders/:id').get(fetchAllOrders)
+router.route('/specificOrder/:did/:oid').get(getSpecificOrderDetails)
 
 router.route("/profile/:userId").delete(deleteProfile)
                                 .get(getDriverrById)
