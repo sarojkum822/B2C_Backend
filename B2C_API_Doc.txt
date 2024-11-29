@@ -403,33 +403,6 @@ ________________________________________________________________________________
 
 Delivery Driver api endpoint
 
-1.Create Partner
- URL: {{host}}/api/v1/deliveryPartner/profile
- Method: POST
-
- example body : {
-   firstName: Raj
-   lastName: Kumar
-   fathersName: Ramesh Kumar
-   dob: 1992-03-15
-   phone: 9876543210
-   secondaryNumber:6666666667
-   bloodGroup: O+
-   city: Mumbai
-   address: 12 Carter Road, Bandra
-   languageKnown: hindi,english,marathi
-   DLNo: MH0123456789
-   aadharNo: 123412341234
-   panNo: AAAAA1234A
-   vehicleRegistrationNo: MH01AB1234
-   accHolderName: Raj Kumar
-   bankName: State Bank of India
-   accNo: 12345678901
-   branchName: Bandra West Branch
-   ifscCode: SBIN0000123
-   image: (Attach an image file)
-
- }
 
 1.add General details of delivery partner
  URL: {{host}}/api/v1/deliveryPartner/personalInformation
@@ -560,18 +533,39 @@ NOTE : To create account phone number is required and to upload the documents de
 
     Responce : 
     {
-    "orders": {
-        "count": 2,
-        "orders": [
-                {
-                    "id": "1111111113-1729774085439"
-                },
-                {
-                    "id": "1111111113-1729790554963"
-                }
-            ]
+    "totalOrders": 2,
+      "orders": [
+        {
+            "id": "1111111113-1729774085439",
+            "orderNo": 101,
+            "porducts": {
+                "E6": 909,
+                "E12": 9,
+                "E30": 3
+            },
+            "price": 6600,
+            "orderDate": {
+                "_seconds": 1729774085,
+                "_nanoseconds": 439000000
+            },
+            "deliveredStatus": false
+        },
+        {
+            "id": "1111111113-1729790554963",
+            "orderNo": 101,
+            "porducts": {
+                "E6": 909,
+                "E12": 9,
+                "E30": 3
+            },
+            "price": 6600,
+            "orderDate": {
+                "_seconds": 1729790554,
+                "_nanoseconds": 963000000
+            },
+            "deliveredStatus": false
         }
-    }
+    ]}
 --------------------------------------------
 10.Delete delivery partner
  URL: {{host}}/api/v1/deliveryPartner/profile/{phone}

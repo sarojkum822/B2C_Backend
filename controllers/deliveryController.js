@@ -598,13 +598,43 @@ const fetchAllOrders = async(req,res)=>{
     if (!docSnap.exists) {
       return res.status(404).json({ message: "Delivery partner not found" });
     }
-    const orders = docSnap.data().totalOrders || "No order found!"
-    return res.status(200).json({ orders });
+    const orderData = docSnap.data().totalOrders || { orders: [] };
+    const totalOrders = docSnap.data().totalOrders.count
+    const orderIds = orderData.orders;
+
+    if (!orderIds.length) {
+      return res.status(200).json({ message: "No orders found!" });
+    }
+
+    // Fetch order details from the orders collection
+    const ordersCollection = db.collection("Order");
+
+    const ordersPromises = orderIds.map((orderId) =>
+      ordersCollection.doc(orderId.id).get()
+    );
+
+    const ordersDocs = await Promise.all(ordersPromises);
+
+    // Extract order data
+    const orders = ordersDocs.map((orderDoc) =>
+      orderDoc.exists ? { 
+        id: orderDoc.id, 
+        orderNo: orderDoc.data().orderNumber||101, 
+        porducts:orderDoc.data().products,
+        price:orderDoc.data().amount,
+        orderDate:orderDoc.data().createdAt, 
+        deliveredStatus : orderDoc.data().deliveredStatus || false
+      } : null
+    ).filter(order => order !== null); // Filter out any null entries for missing documents
+
+    // Return the fetched orders
+    return res.status(200).json({totalOrders, orders });
   } catch (error) {
     console.error("Error message:", error);
     return res.status(500).json({ message: "Error updating delivery partner rating", error: error.message });
   }
 }
+
 export{ 
   deliveryPartnerProfile,
   bankDetails,
