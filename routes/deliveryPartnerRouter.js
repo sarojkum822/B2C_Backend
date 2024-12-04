@@ -1,7 +1,9 @@
 import express from "express"
 import authenicateUser from "../middleware/authHandler.js"
 
-import { deliveryPartnerProfile,
+import { 
+  // deliveryPartnerProfile,
+  // --------PROFILE CREATION-------
   personalInformation,
   generateIdAndPassword,
   bankDetails,
@@ -10,11 +12,15 @@ import { deliveryPartnerProfile,
   uploadDLDocs,
   vehicleDetails,
   getDocsStatus,
+  //----ORDER DETAILS----------
   fetchAllOrders,
   getSpecificOrderDetails,
+  getCurrentOrders,
+  //----
   deleteProfile,
   getDriverrById,
-  addRating
+  addRating,
+  getOutletIdByDP
 } from "../controllers/deliveryController.js"
 
 import multer from "multer"
@@ -41,7 +47,7 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-router.route("/profile").post(upload.single("img"),deliveryPartnerProfile) //authenicateUser, 
+// router.route("/profile").post(upload.single("img"),deliveryPartnerProfile) //authenicateUser, 
 //prodile details
 router.route("/personalInformation").post(upload.single("img"),personalInformation)
 router.route("/genidandpassword/:id").post(generateIdAndPassword)
@@ -55,9 +61,13 @@ router.route("/getdocstatus/:id").get(getDocsStatus)
 //get all the orders of delivery partner 
 router.route('/fetchOrders/:id').get(fetchAllOrders)
 router.route('/specificOrder/:did/:oid').get(getSpecificOrderDetails)
+router.route('/getcurrentorders/:id').get(getCurrentOrders)
 
 router.route("/profile/:userId").delete(deleteProfile)
                                 .get(getDriverrById)
 router.route("/:id/rating").patch(addRating)
+
+//DP : delivery partner
+router.route("/getoutletId/:id").get(getOutletIdByDP)
 
 export default router

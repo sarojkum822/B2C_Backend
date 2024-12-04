@@ -1,5 +1,7 @@
 import { getFirestore } from "firebase-admin/firestore"
 import {removeImg} from "../utils/imageRemove.js"
+import haversineDistance from "../utils/haversineDistance.js";
+
 const mainCollection = "Delivery_partner"
 
 
@@ -106,7 +108,7 @@ const deliveryPartnerProfile = async (req, res) => {
 const personalInformation = async (req, res) => {
   try {
     //extract the detailse
-    const {
+    let {
       firstName,
       lastName,
       dob,
@@ -119,11 +121,65 @@ const personalInformation = async (req, res) => {
       languageKnown,
     } = req.body;
 
-    // Validate required fields    
+    // Validate required fields 
+    // address = JSON.parse(address)
+    
     if (!req.file) {
       return res
         .status(400)
         .json({ status: "fail", message: "No image file provided" });
+    }
+    if(!address || !address.coordinates){
+      removeImg(req.file.path)
+      return res.status(400).json({status:"fail",message:"please enter all details of delivery partner with lat,long in address"})
+    }
+    const db = getFirestore();
+
+    //find the nearest outlets
+    const deliveryPartnerCordinates = { lat: parseFloat(address.coordinates.lat), long: parseFloat(address.coordinates.long)}; // Input coordinates
+    let maxDistance = 3; // Maximum distance in kilometers
+    let distance=3
+
+    const outletsRef = db.collection('Outlets');
+    const snapshot = await outletsRef.get();
+    
+    let nearbyOutlet ={};
+
+    snapshot.forEach(doc => {
+      const outletData = doc.data();
+      const outletCoords = outletData.address.coordinates;
+      
+      distance = haversineDistance(deliveryPartnerCordinates, {
+        lat: parseFloat(outletCoords.lat),
+        long: parseFloat(outletCoords.long)
+      });
+      
+      if (distance < maxDistance) {
+        maxDistance=distance
+        nearbyOutlet={
+          id:outletData.id || 'NA',
+          name:outletData.name || 'NA',
+          phNo:outletData.phNo || 'NA',
+          img:outletData.img || 'NA',
+          distance:distance.toFixed(2) + 'KM',
+          address:outletData.address
+        };
+      }
+    });
+
+    if (Object.keys(nearbyOutlet).length==0) {
+      return res.status(404).json({status:"fail",message:'No nearby outlets, we will soon expand here!!'});
+    }
+    
+    const outletId = nearbyOutlet.id
+    const outletRef = db.collection("Outlets").doc(outletId);
+    const outletData = await outletRef.get();
+
+    if (outletData.exists) {
+      const data = outletData.data()
+      await outletRef.update({
+        deleveryPartners : [...data.deleveryPartners,phone]
+      })
     }
 
     //phone number is required
@@ -134,7 +190,6 @@ const personalInformation = async (req, res) => {
       });
     }
     // Initialize Firestore
-    const db = getFirestore();
     const img = req.file.path;
     const dataOfBirth = dob ? new Date(dob) : null;
     
@@ -151,6 +206,7 @@ const personalInformation = async (req, res) => {
       address,
       image: img || null,
       languageKnown: languageKnown ? languageKnown.split(",") : [],
+      nearbyOutlet,
       updatedAt: new Date(),
     };
 
@@ -181,7 +237,7 @@ const personalInformation = async (req, res) => {
       },
       { merge: true } // Merge with existing data
     )
-    res.status(200).json({ status: "success", message: "personal details submitted successfully." });
+    res.status(200).json({ status: "success", message: "personal details submitted and assign to the near by outlet successfully ." });
   } catch (error) {
     removeImg(req.file.path)
     console.error("Error creating/updating user:", error);
@@ -689,8 +745,37 @@ const getSpecificOrderDetails = async (req, res) => {
   }
 };
 
+const getOutletIdByDP = async(req,res)=>{
+   try {
+    const id = req.params.id
 
+    const db = getFirestore()
+    
+    if (!id) {
+      return res.status(400).json({ message: "Delivery partner ID is required." });
+    }
+    const deliveryRef = db.collection(mainCollection).doc(id)
+    const deliveryDoc = await deliveryRef.get()
+    if (!deliveryDoc.exists) {
+      return res.status(404).json({ message: "Delivery partner not found." });
+    }
 
+    const outletData = deliveryDoc.data().generalDetails.nearbyOutlet
+    
+    return res.status(200).json(outletData);
+   } catch (error) {
+    console.error("Error fetching order details:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+   }
+}
+const getCurrentOrders = async(req,res)=>{
+  try {
+    const id = req.params.id
+  } catch (error) {
+    console.error("Error fetching order details:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+}
 export{ 
   deliveryPartnerProfile,
   bankDetails,
@@ -701,9 +786,13 @@ export{
   uploadDLDocs,
   vehicleDetails,
   getDocsStatus,
+
   fetchAllOrders,
   getSpecificOrderDetails,
+  getCurrentOrders,
+
   deleteProfile,
   getDriverrById,
-  addRating
+  addRating,
+  getOutletIdByDP,
 }

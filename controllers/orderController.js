@@ -3,6 +3,63 @@ import { sendNotification } from "./outletController.js";
 
 const mainCollection = "Order";
 
+const fetchTokenByPartnerId = async (partnerId) => {
+  try {
+    const db = getFirestore()
+    const docRef = db.collection("Delivery_partner").doc(partnerId); // Assume db is your Firestore instance
+    const doc = await docRef.get();
+
+    if (doc.exists) {
+      return doc.data().token; // Assuming the token is stored in the 'token' field
+    } else {
+      console.log(`No token found for partner ID: ${partnerId}`);
+      return null;
+    }
+  } catch (error) {
+    console.error(`Error fetching token for partner ID ${partnerId}:`, error);
+    return null;
+  }
+};
+const sendNotificationToDeliveryPartners = async (deliveryPartners, outlet, address, id) => {
+  try {
+    // Step 1: Fetch tokens for all delivery partners
+    const tokens = await Promise.all(
+      deliveryPartners.map(async (partnerId) => {
+        const token = await fetchTokenByPartnerId(partnerId); // Assume this function fetches a token for a partner ID
+        return token;
+      })
+    );
+
+    // Filter out any null or undefined tokens
+    const validTokens = tokens.filter((token) => token);
+
+    if (validTokens.length === 0) {
+      console.log("No valid tokens to send notifications.");
+      return;
+    }
+
+    // Step 2: Construct the notification message
+    const message = {
+      data: { outlet, address, id },
+      tokens: validTokens,
+    };
+
+    // Step 3: Send the notification using Firebase Messaging
+    const messaging = getMessaging();
+    const resp = await messaging.sendMulticast(message);
+
+    // Step 4: Handle response
+    console.log(`Notifications sent: ${resp.successCount}, Failed: ${resp.failureCount}`);
+
+    if (resp.failureCount > 0) {
+      console.log("Failed notifications details:", resp.responses.filter((r) => !r.success));
+    }
+  } catch (error) {
+    console.error("Error sending notifications:", error);
+  }
+};
+
+
 
 // Haversine formula to calculate distance between two coordinates
 function haversineDistance(coords1, coords2) {
@@ -42,7 +99,7 @@ const newOrder = async (req, res) => {
   const db = getFirestore();
 
  // check for nearest outlet
- const orderCoordinates = { lat: parseFloat(address.coordinates.lat), long: parseFloat(address.coordinates.long)}; // Input coordinates
+    const orderCoordinates = { lat: parseFloat(address.coordinates.lat), long: parseFloat(address.coordinates.long)}; // Input coordinates
     let maxDistance = 3; // Maximum distance in kilometers
     let distance=3
     const outletsRef = db.collection('Outlets');
@@ -121,24 +178,27 @@ const newOrder = async (req, res) => {
 
 
       // 5. Changing total sale in Outlate 
-    const outletRef = db.collection("Outlets").doc(outletId); // Fetch outlet document using outletId
-    const outletDoc = await outletRef.get(); // Get the document snapshot
-    
-    if (outletDoc.exists) {
+      const outletRef = db.collection("Outlets").doc(outletId); // Fetch outlet document using outletId
+      const outletDoc = await outletRef.get(); // Get the document snapshot
       const outletData = outletDoc.data(); // Get the document data
-    
-      // Check if totalSales exists and has properties, if not, initialize them
-      const totalSales = outletData.totalSales || { E6: 0, E12: 0, E30: 0 };
-    
-      await outletRef.update({
-        totalSales: {
-          E6: (totalSales.E6 || 0) + (products.E6 || 0),
-          E12: (totalSales.E12 || 0) + (products.E12 || 0),
-          E30: (totalSales.E30 || 0) + (products.E30 || 0),
-        }
-      });
-    }
-     //Total order of product
+
+      if (outletDoc.exists) {      
+        // Check if totalSales exists and has properties, if not, initialize them
+        const totalSales = outletData.totalSales || { E6: 0, E12: 0, E30: 0 };
+      
+        await outletRef.update({
+          totalSales: {
+            E6: (totalSales.E6 || 0) + (products.E6 || 0),
+            E12: (totalSales.E12 || 0) + (products.E12 || 0),
+            E30: (totalSales.E30 || 0) + (products.E30 || 0),
+          }
+        });
+      }
+      //notification
+
+      sendNotificationToDeliveryPartners(outletData.deleveryPartners, outletData, address, outletData.id);
+
+      //Total order of product
         const productCounts = {
           "6pc_tray": "E6",
           "12pc_tray": "E12",
