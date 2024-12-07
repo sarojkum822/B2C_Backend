@@ -121,8 +121,9 @@ const personalInformation = async (req, res) => {
       languageKnown,
     } = req.body;
 
-    // Validate required fields 
-    // address = JSON.parse(address)
+    
+    address = typeof address == "object" ?address :JSON.parse(address);
+    console.log(address);
     
     if (!req.file) {
       return res
