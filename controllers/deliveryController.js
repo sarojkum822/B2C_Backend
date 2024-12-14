@@ -796,8 +796,18 @@ const getCurrentOrders = async (req, res) => {
     }
 
     // Filter pending orders
-    const pendingOrders = deliveryData.totalOrders.orders.filter(
-      (order) => order.deliveredOrder === "Pending"
+    const pendingOrders = await Promise.all(
+      deliveryData.totalOrders.orders
+        .filter((order) => order.deliveredOrder === "Pending")
+        .map(async (order) => {
+          const orderRef = db.collection("Order").doc(order.id);
+          const orderDoc = await orderRef.get();
+          const data = orderDoc.data()
+          if (orderDoc.exists) {
+            return { amount:data.amount, deliveryAddress:data.address,products:data.products,outletId:data.outletId,customerId:data.customerId };
+          } 
+          return null;
+        })
     );
 
     // Return the pending orders
