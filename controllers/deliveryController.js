@@ -769,14 +769,104 @@ const getOutletIdByDP = async(req,res)=>{
     return res.status(500).json({ message: "Server error", error: error.message });
    }
 }
-const getCurrentOrders = async(req,res)=>{
+
+const getCurrentOrders = async (req, res) => {
   try {
-    const id = req.params.id
+    const id = req.params.id;
+
+    // Validate the delivery partner ID
+    if (!id) {
+      return res.status(400).json({ message: "Delivery partner ID is required." });
+    }
+
+    const db = getFirestore();
+    const deliveryRef = db.collection(mainCollection).doc(id);
+    const deliveryDoc = await deliveryRef.get();
+
+    // Check if the delivery partner document exists
+    if (!deliveryDoc.exists) {
+      return res.status(404).json({ message: "Delivery partner not found." });
+    }
+
+    const deliveryData = deliveryDoc.data();
+
+    // Validate the structure of deliveryData
+    if (!deliveryData?.totalOrders?.orders || !Array.isArray(deliveryData.totalOrders.orders)) {
+      return res.status(400).json({ message: "Invalid data format for orders." });
+    }
+
+    // Filter pending orders
+    const pendingOrders = deliveryData.totalOrders.orders.filter(
+      (order) => order.deliveredOrder === "Pending"
+    );
+
+    // Return the pending orders
+    return res.status(200).json({ pendingOrders, count: pendingOrders.length });
+  } catch (error) {
+    console.error("Error fetching order details:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
+const acceptOrder = async(req,res)=>{
+  try {
+    const did = req.params.did
+    const oid = req.params.oid
+
+    if (!did) {
+      return res.status(400).json({ message: "Delivery partner ID is required." });
+    }
+    if (!oid) {
+      return res.status(400).json({ message: "Order ID is required." });
+    }
+
+    //fetch order details 
+    const db = getFirestore()
+    const orderRef = db.collection("Order").doc(oid)
+    const orderDoc = await orderRef.get()
+    if (!orderDoc.exists) {
+      return res.status(400).json({ message: "Order is not found." });
+    }
+    const orderData = orderDoc.data()
+    const orderAcceptedByRider = orderData.orderAcceptedByRider || false
+    if (orderAcceptedByRider) {
+      return res.status(400).json({ message: "Order is already accepted by Some other delivery partner." });
+    }
+
+    //fetch delivery partner details
+    const deliveryRef = db.collection(mainCollection).doc(did)
+    const deliveryDoc = await deliveryRef.get()
+    if (!deliveryDoc.exists) {
+      return res.status(400).json({ message: "Delivery partner is not found. order cannot be assign." });
+    }
+    
+    const deliveryData = deliveryDoc.data()
+    const newOrder = {
+      id:oid,//id helps to retrive the inforamtion of order from ouder collection
+      orderAcceptedByRider:true,
+      outletProductsCollected:false,
+      deliveredOrder:"Pending",
+    }
+    const totalOrders = {
+      count:deliveryData.totalOrders.count+1,
+      orders:[...deliveryData.totalOrders.orders,newOrder]
+    }
+    //update the order in order field of delivery partner
+    await deliveryRef.update({
+      totalOrders
+    })
+    await orderRef.update({
+      orderAcceptedByRider:true
+    })
+
+    return res.status(201).json({message:"Order accepted by delivery partner!"})
   } catch (error) {
     console.error("Error fetching order details:", error);
     return res.status(500).json({ message: "Server error", error: error.message });
   }
 }
+
 export{ 
   deliveryPartnerProfile,
   bankDetails,
@@ -787,11 +877,13 @@ export{
   uploadDLDocs,
   vehicleDetails,
   getDocsStatus,
+  
+  acceptOrder,
 
   fetchAllOrders,
   getSpecificOrderDetails,
   getCurrentOrders,
-
+  
   deleteProfile,
   getDriverrById,
   addRating,

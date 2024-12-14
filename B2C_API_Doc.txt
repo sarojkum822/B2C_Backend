@@ -382,6 +382,7 @@ NOTE:  for 'Latest Orders' use the getOrder route whith this oultet 'id' in quer
     
     res(200):{message:"delivery partner approved"}
     res(500):{ error: 'Failed to fetch data' }
+    
 9. Product count
    URL: {{host}}/api/v1/admin/getProductCount
    Method: GET

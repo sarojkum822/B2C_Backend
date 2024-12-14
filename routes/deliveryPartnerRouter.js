@@ -12,6 +12,8 @@ import {
   uploadDLDocs,
   vehicleDetails,
   getDocsStatus,
+  //-------accept order--------
+  acceptOrder,
   //----ORDER DETAILS----------
   fetchAllOrders,
   getSpecificOrderDetails,
@@ -58,6 +60,8 @@ router.route("/personalDocs/dl/:id").post(upload.fields([{ name: 'front', maxCou
 router.route("/vehicleDetails/:id").post(upload.single("img"),vehicleDetails)
 router.route("/getdocstatus/:id").get(getDocsStatus)
 
+
+router.route('/acceptOrder/:did/:oid').post(acceptOrder)
 //get all the orders of delivery partner 
 router.route('/fetchOrders/:id').get(fetchAllOrders)
 router.route('/specificOrder/:did/:oid').get(getSpecificOrderDetails)

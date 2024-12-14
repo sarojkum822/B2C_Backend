@@ -3,64 +3,6 @@ import { sendNotification } from "./outletController.js";
 
 const mainCollection = "Order";
 
-const fetchTokenByPartnerId = async (partnerId) => {
-  try {
-    const db = getFirestore()
-    const docRef = db.collection("Delivery_partner").doc(partnerId); // Assume db is your Firestore instance
-    const doc = await docRef.get();
-
-    if (doc.exists) {
-      return doc.data().token; // Assuming the token is stored in the 'token' field
-    } else {
-      console.log(`No token found for partner ID: ${partnerId}`);
-      return null;
-    }
-  } catch (error) {
-    console.error(`Error fetching token for partner ID ${partnerId}:`, error);
-    return null;
-  }
-};
-const sendNotificationToDeliveryPartners = async (deliveryPartners, outlet, address, id) => {
-  try {
-    // Step 1: Fetch tokens for all delivery partners
-    const tokens = await Promise.all(
-      deliveryPartners.map(async (partnerId) => {
-        const token = await fetchTokenByPartnerId(partnerId); // Assume this function fetches a token for a partner ID
-        return token;
-      })
-    );
-
-    // Filter out any null or undefined tokens
-    const validTokens = tokens.filter((token) => token);
-
-    if (validTokens.length === 0) {
-      console.log("No valid tokens to send notifications.");
-      return;
-    }
-
-    // Step 2: Construct the notification message
-    const message = {
-      data: { outlet, address, id },
-      tokens: validTokens,
-    };
-
-    // Step 3: Send the notification using Firebase Messaging
-    const messaging = getMessaging();
-    const resp = await messaging.sendMulticast(message);
-
-    // Step 4: Handle response
-    console.log(`Notifications sent: ${resp.successCount}, Failed: ${resp.failureCount}`);
-
-    if (resp.failureCount > 0) {
-      console.log("Failed notifications details:", resp.responses.filter((r) => !r.success));
-    }
-  } catch (error) {
-    console.error("Error sending notifications:", error);
-  }
-};
-
-
-
 // Haversine formula to calculate distance between two coordinates
 function haversineDistance(coords1, coords2) {
   const toRad = (value) => (value * Math.PI) / 180;
@@ -139,12 +81,13 @@ const newOrder = async (req, res) => {
   const createdAt=Date.now();
   const updatedAt=createdAt
   const status="pending";
+  const orderAcceptedByRider = false
 
   // Generate a unique ID for the order
   const id = `${customerId}-${createdAt}`;
   
   try {
-    // 1. Create the new order in Firestore
+    // 1. Create the new order in Firestorep
     const orderData={
       address, // Address and coordinates
       amount, // Total amount of the order
@@ -154,7 +97,8 @@ const newOrder = async (req, res) => {
       outletId, // ID of the outlet
       customerId, // ID of the customer
       deleveryDistance,
-      status
+      status,
+      orderAcceptedByRider
     }
     await db.collection(mainCollection).doc(id).set(orderData);
     
@@ -196,7 +140,7 @@ const newOrder = async (req, res) => {
       }
       //notification
 
-      sendNotificationToDeliveryPartners(outletData.deleveryPartners, outletData, address, outletData.id);
+      // sendNotification(outletData,address,outletData.id);
 
       //Total order of product
         const productCounts = {
