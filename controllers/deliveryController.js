@@ -693,6 +693,7 @@ const fetchAllOrders = async(req,res)=>{
     return res.status(500).json({ message: "Server error", error: error.message });
   }
 }
+
 const getSpecificOrderDetails = async (req, res) => {
   try {
     const did = req.params.did; // delivery partner ID
@@ -803,8 +804,20 @@ const getCurrentOrders = async (req, res) => {
           const orderRef = db.collection("Order").doc(order.id);
           const orderDoc = await orderRef.get();
           const data = orderDoc.data()
+
+          const outletRef = db.collection("Outlets").doc(data.outletId)
+          const outletDoc = await outletRef.get()
+          const outletData = outletDoc.data()
+
+
+          const outletInfo = {
+            name: outletData.name,
+            address:outletData.address,
+            phone:outletData.phNo
+          }
+
           if (orderDoc.exists) {
-            return { amount:data.amount, deliveryAddress:data.address,products:data.products,outletId:data.outletId,customerId:data.customerId };
+            return { amount:data.amount, deliveryAddress:data.address,products:data.products,outletInfo,customerId:data.customerId };
           } 
           return null;
         })
@@ -862,6 +875,7 @@ const acceptOrder = async(req,res)=>{
       count:deliveryData.totalOrders.count+1,
       orders:[...deliveryData.totalOrders.orders,newOrder]
     }
+
     //update the order in order field of delivery partner
     await deliveryRef.update({
       totalOrders

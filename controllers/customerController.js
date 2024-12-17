@@ -41,13 +41,13 @@ const newUser = async (req, res) => {
 
   res.status(200).json({ message: "User created" });
 } 
-catch (err){
+  catch (err){
   res.status(400).json({
     message:"failed to create user"
     
   })
   console.error(err)
-}
+  }
 
 }
 
@@ -143,7 +143,5 @@ const updateUser = async (req, res) => {
     console.error(err);
   }
 };
-
-
 
 export { newUser,getCustomerById,updateUser};
