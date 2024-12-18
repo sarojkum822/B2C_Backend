@@ -801,6 +801,7 @@ const getCurrentOrders = async (req, res) => {
       deliveryData.totalOrders.orders
         .filter((order) => order.deliveredOrder === "Pending")
         .map(async (order) => {
+          //order inforamtion
           const orderRef = db.collection("Order").doc(order.id);
           const orderDoc = await orderRef.get();
           const data = orderDoc.data()
@@ -809,15 +810,27 @@ const getCurrentOrders = async (req, res) => {
           const outletDoc = await outletRef.get()
           const outletData = outletDoc.data()
 
-
+          //outlet inforamtion
           const outletInfo = {
+            outletId: outletData.id,
             name: outletData.name,
             address:outletData.address,
             phone:outletData.phNo
           }
 
+          const customerRef = db.collection("Customer").doc(data.customerId)
+          const customerDoc = await customerRef.get()
+          const customerData = customerDoc.data()
+
+          //customer inforamation
+          const customerInfo = {
+            id:data.customerId,
+            name:customerData.name,
+            phone:customerData.phone
+          }
+
           if (orderDoc.exists) {
-            return { amount:data.amount, deliveryAddress:data.address,products:data.products,outletInfo,customerId:data.customerId };
+            return { orderId:order.id,amount:data.amount, deliveryAddress:data.address,products:data.products,outletInfo,customerInfo };
           } 
           return null;
         })
@@ -863,7 +876,7 @@ const acceptOrder = async(req,res)=>{
     if (!deliveryDoc.exists) {
       return res.status(400).json({ message: "Delivery partner is not found. order cannot be assign." });
     }
-    
+
     const deliveryData = deliveryDoc.data()
     const newOrder = {
       id:oid,//id helps to retrive the inforamtion of order from ouder collection
@@ -891,6 +904,88 @@ const acceptOrder = async(req,res)=>{
   }
 }
 
+const markOrderDelivered = async (req, res) => {
+  try {
+    const did = req.params.did;
+    const oid = req.params.oid;
+
+    if (!did) {
+      return res.status(400).json({ message: "Delivery partner ID is required." });
+    }
+    if (!oid) {
+      return res.status(400).json({ message: "Order ID is required." });
+    }
+
+    const db = getFirestore();
+    const deliveryRef = db.collection(mainCollection).doc(did);
+    const deliveryDoc = await deliveryRef.get();
+
+    if (!deliveryDoc.exists) {
+      return res.status(400).json({ message: "Delivery partner not found. Order cannot be updated." });
+    }
+
+    const deliveryData = deliveryDoc.data();
+
+    // Order data
+    const orderRef = db.collection("Order").doc(oid);
+    const orderDoc = await orderRef.get();
+
+    if (!orderDoc.exists) {
+      return res.status(404).json({ message: "Order not found." });
+    }
+
+    const orderData = orderDoc.data();
+
+    // Find the specific order
+    const orderToUpdate = deliveryData.totalOrders.orders.find((order) => order.id === oid);
+
+    if (!orderToUpdate) {
+      return res.status(404).json({ message: "Order not assigned to this delivery partner." });
+    }
+
+    if (orderToUpdate.deliveredOrder !== "Pending") {
+      return res.status(400).json({ message: "Order is already delivered." });
+    }
+
+    // Mark as delivered
+    orderToUpdate.deliveredOrder = "Delivered";
+
+    // Update wallet
+    const updatedWallet = (deliveryData.wallet || 0) + (orderData.amount || 0);
+
+    // Update the database with new data
+    await deliveryRef.update({
+      "totalOrders.orders": deliveryData.totalOrders.orders,
+      wallet: updatedWallet,
+    });
+
+    return res.status(200).json({ message: "Order marked as delivered and wallet updated." });
+  } catch (error) {
+    console.error("Error updating order details:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const amountReturnToStore = async(req,res)=>{
+  try {
+    const id = req.params.id
+
+    if (!id) {
+      return res.status(500).json({ message:"Delivery partner id is required." });
+    }
+    const db = getFirestore()
+    const deliveryRef = db.collection(mainCollection).doc(id)
+    const deliveryDoc = await deliveryRef.get()
+
+    const wallet = deliveryDoc.data().wallet;
+    return res.status(200).json({amount:wallet} );
+
+  } catch (error) {
+    console.error("Error updating order details:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+}
+
 export{ 
   deliveryPartnerProfile,
   bankDetails,
@@ -903,10 +998,12 @@ export{
   getDocsStatus,
   
   acceptOrder,
+  markOrderDelivered,
 
   fetchAllOrders,
   getSpecificOrderDetails,
   getCurrentOrders,
+  amountReturnToStore,
   
   deleteProfile,
   getDriverrById,

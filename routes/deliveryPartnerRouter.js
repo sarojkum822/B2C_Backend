@@ -13,11 +13,13 @@ import {
   vehicleDetails,
   getDocsStatus,
   //-------accept order--------
+  markOrderDelivered,
   acceptOrder,
   //----ORDER DETAILS----------
   fetchAllOrders,
   getSpecificOrderDetails,
   getCurrentOrders,
+  amountReturnToStore,
   //----
   deleteProfile,
   getDriverrById,
@@ -62,10 +64,13 @@ router.route("/getdocstatus/:id").get(getDocsStatus)
 
 
 router.route('/acceptOrder/:did/:oid').post(acceptOrder)
+router.route("/markorderdelivered/:did/:oid").patch(markOrderDelivered)
+
 //get all the orders of delivery partner 
 router.route('/fetchOrders/:id').get(fetchAllOrders)
 router.route('/specificOrder/:did/:oid').get(getSpecificOrderDetails)
 router.route('/getcurrentorders/:id').get(getCurrentOrders)
+router.route('/storeamount/:id').get(amountReturnToStore)
 
 router.route("/profile/:userId").delete(deleteProfile)
                                 .get(getDriverrById)
