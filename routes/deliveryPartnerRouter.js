@@ -2,7 +2,7 @@ import express from "express"
 import authenicateUser from "../middleware/authHandler.js"
 
 import { 
-  // deliveryPartnerProfile,
+  deliveryPartnerProfile,
   // --------PROFILE CREATION-------
   personalInformation,
   generateIdAndPassword,
@@ -51,7 +51,7 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 
-// router.route("/profile").post(upload.single("img"),deliveryPartnerProfile) //authenicateUser, 
+router.route("/profile").post(upload.single("img"),deliveryPartnerProfile) //authenicateUser, 
 //prodile details
 router.route("/personalInformation").post(upload.single("img"),personalInformation)
 router.route("/genidandpassword/:id").post(generateIdAndPassword)

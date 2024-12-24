@@ -893,8 +893,10 @@ const acceptOrder = async(req,res)=>{
     await deliveryRef.update({
       totalOrders
     })
+
     await orderRef.update({
-      orderAcceptedByRider:true
+      orderAcceptedByRider:true,
+      deliveryPartnerId:did,
     })
 
     return res.status(201).json({message:"Order accepted by delivery partner!"})
@@ -938,7 +940,8 @@ const markOrderDelivered = async (req, res) => {
 
     // Find the specific order
     const orderToUpdate = deliveryData.totalOrders.orders.find((order) => order.id === oid);
-
+    console.log(orderToUpdate);
+    
     if (!orderToUpdate) {
       return res.status(404).json({ message: "Order not assigned to this delivery partner." });
     }
@@ -949,7 +952,6 @@ const markOrderDelivered = async (req, res) => {
 
     // Mark as delivered
     orderToUpdate.deliveredOrder = "Delivered";
-
     // Update wallet
     const updatedWallet = (deliveryData.wallet || 0) + (orderData.amount || 0);
 
@@ -958,7 +960,11 @@ const markOrderDelivered = async (req, res) => {
       "totalOrders.orders": deliveryData.totalOrders.orders,
       wallet: updatedWallet,
     });
-
+    orderRef.update({
+      status: "Delivered"
+    })
+    console.log(orderData);
+    
     return res.status(200).json({ message: "Order marked as delivered and wallet updated." });
   } catch (error) {
     console.error("Error updating order details:", error);

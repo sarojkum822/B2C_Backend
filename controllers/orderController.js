@@ -77,10 +77,10 @@ const newOrder = async (req, res) => {
 
  // creatig order for nearest outlet
   const outletId=nearbyOutlet.id
-  const deleveryDistance=distance.toFixed(3) + "KM"
+  const deleveryDistance=distance.toFixed(6) + "KM"
   const createdAt=Date.now();
   const updatedAt=createdAt
-  const status="pending";
+  const status="Pending";
   const orderAcceptedByRider = false
 
   // Generate a unique ID for the order
@@ -180,9 +180,6 @@ const newOrder = async (req, res) => {
       // 6. Return an error message for customer not found
       return res.status(400).json({ message: 'Customer not found, order deleted' });
     }
-
-    
-
     // (Optional) Sending notifications (Uncomment if needed)
     // sendNotification(outletId, address.fullAddress, id);
 
@@ -241,6 +238,53 @@ const getAllOrders = async (req, res) => {
 }
 
 
+const getorderDetailsbyId = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    if (!id) {
+      return res.status(400).json({ message: "Order ID is required!" });
+    }
+
+    const db = getFirestore();
+
+    //get order details and descard unwanted details
+    const orderDocRef = db.collection(mainCollection).doc(id);
+    const orderDoc = await orderDocRef.get();
+    if (!orderDoc.exists) {
+      return res.status(404).json({ message: "Order not found!" });
+    }
+    const orderData = { id: orderDoc.id, ...orderDoc.data() };
+    const {outletId,customerId,...orderInfo} = orderData
+
+    // Fetch customer details and descard the unwanted details
+    const customerDocRef = db.collection("Customer").doc(customerId);
+    const customerDoc = await customerDocRef.get();
+    if (!customerDoc.exists) {
+      return res.status(404).json({ message: "Customer not found!" });
+    }
+    const customerData = { id: customerDoc.id, ...customerDoc.data() };
+    const {timeOfCreation,addresses,totalExpenditure,totalOrders,...customerInfo} = customerData
+
+    // Fetch outlet details and exclude unwanted fields
+    const outletDocRef = db.collection("Outlets").doc(outletId);
+    const outletDoc = await outletDocRef.get();
+    if (!outletDoc.exists) {
+      return res.status(404).json({ message: "Outlet not found!" });
+    }
+    const outDataRaw = { id: outletDoc.id, ...outletDoc.data() };
+    const { totalSales, deleveryPartners, ...outletInfo } = outDataRaw;
+
+    // Consolidate response
+    const order = { order: orderInfo, customer: customerInfo, outlet: outletInfo };
+    res.status(200).json(order);
+
+  } catch (error) {
+    console.error("Error fetching order details:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 // Handler function to find all outlets within 5 km range from the given coordinates
 // const findNearbyOutlets = async (req, res) => {
@@ -296,4 +340,8 @@ const getAllOrders = async (req, res) => {
 
 
 
-export { newOrder,getAllOrders}
+export { 
+  newOrder,
+  getAllOrders,
+  getorderDetailsbyId
+}
