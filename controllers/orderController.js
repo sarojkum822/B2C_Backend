@@ -83,9 +83,17 @@ const newOrder = async (req, res) => {
   const status="Pending";
   const orderAcceptedByRider = false
 
-  // Generate a unique ID for the order
-  const id = `${customerId}-${createdAt}`;
+  //to assign the increasing count to the product 
+  const countRef = db.collection(mainCollection).doc("count-orders")
+  const countDoc = await countRef.get()
+  const count = countDoc.data().count
   
+  // Generate a unique ID for the order
+  const id = `${customerId}-${createdAt}-${count+1}`;
+  await countRef.update({
+    count:count+1
+  })
+
   try {
     // 1. Create the new order in Firestorep
     const orderData={

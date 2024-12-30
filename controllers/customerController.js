@@ -1,11 +1,13 @@
 import { getFirestore } from "firebase-admin/firestore"
+import admin from 'firebase-admin'
+
 
 const mainCollection = "Customer"
 
 const newUser = async (req, res) => {
   
   try{
-  let { name, phone, email, addresses, age, gender } = req.body;
+  let { name, phone, email, addresses, age, gender,password } = req.body;
   if(!phone) return res.status(400).json({message:"phone is a required attribute"})
   name=name || 'newUser '+phone
   email=email || ''
@@ -36,7 +38,8 @@ const newUser = async (req, res) => {
     totalExpenditure: 0,
     totalOrders:0, // Initialize as 0 and update this with each new order
     addresses, // Array of address objects with full address and coordinates (lat, long)
-    timeOfCreation: Date.now()
+    timeOfCreation: Date.now(),
+    password
   });
 
   res.status(200).json({ message: "User created" });
@@ -48,7 +51,6 @@ const newUser = async (req, res) => {
   })
   console.error(err)
   }
-
 }
 
 const getCustomerById = async (req, res) => {
@@ -144,4 +146,42 @@ const updateUser = async (req, res) => {
   }
 };
 
-export { newUser,getCustomerById,updateUser};
+
+const requestOTP= async (req, res) => {
+  const phoneNumber = req.body.phoneNumber;
+
+  try {
+    const auth = admin.auth();
+    admin.createVerificationCode()
+    const sessionInfo = await auth.createVerificationCode(phoneNumber, {
+      ttl: 60, // TTL of 60 seconds for the OTP
+    });
+
+    res.status(200).send({ sessionInfo });
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+}
+
+const verifyOTP = async(req, res) => {
+  const { sessionInfo, otp } = req.body;
+
+  try {
+    const auth = admin.auth();
+    const phoneAuthResult = await auth.verifyVerificationCode(sessionInfo, otp);
+
+    // Use phoneAuthResult to create a custom token for the user
+    const customToken = await auth.createCustomToken(phoneAuthResult.uid);
+
+    res.status(200).send({ token: customToken });
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+}
+export { 
+  newUser,
+  getCustomerById,
+  updateUser,
+  requestOTP,
+  verifyOTP,
+};
