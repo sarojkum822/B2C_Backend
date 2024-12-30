@@ -12,6 +12,8 @@ import {
   uploadDLDocs,
   vehicleDetails,
   getDocsStatus,
+
+  verifyPassword,
   //-------accept order--------
   markOrderDelivered,
   acceptOrder,
@@ -61,6 +63,9 @@ router.route("/personalDocs/pancard/:id").post(upload.fields([{ name: 'front', m
 router.route("/personalDocs/dl/:id").post(upload.fields([{ name: 'front', maxCount: 1 },{ name: 'back', maxCount: 1 }]),uploadDLDocs)
 router.route("/vehicleDetails/:id").post(upload.single("img"),vehicleDetails)
 router.route("/getdocstatus/:id").get(getDocsStatus)
+
+router.route('/verifypassword',verifyPassword)
+
 
 
 router.route('/acceptOrder/:did/:oid').post(acceptOrder)

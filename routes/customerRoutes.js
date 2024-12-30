@@ -4,8 +4,8 @@ import {
     newUser ,
     getCustomerById,
     updateUser,
-    requestOTP,
-    verifyOTP,
+    // requestOTP,
+    verifyPassword,
 } from "../controllers/customerController.js"
 import authenicateUser from "../middleware/authHandler.js"
 const router = express.Router()
@@ -15,6 +15,8 @@ const mult = multer();
 router.route("/user").post(newUser) //authenicateUser,
 router.route("/user/:phone").patch(mult.any(),updateUser) //authenicateUser,
 router.route("/user/:customerId").get( getCustomerById)
+
+router.route('/verifypassword',verifyPassword)
 // router.route('/request-otp').post(requestOTP)
 // router.route('/verify-otp').post(verifyOTP)
 
