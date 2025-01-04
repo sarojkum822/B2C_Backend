@@ -517,6 +517,28 @@ const getProductCount =async(req,res)=>{
   }
 }
 
+const changeProductprice = async(req,res)=>{
+  try {
+    const id = req.params.id
+    const {price , descount} = req.body
+
+    const db = getFirestore()
+    const productDocRef = db.collection("products").doc(id)
+    const productDoc = await productDocRef.get()
+    
+    if(!productDoc.exists) return res.status(404).json({message:"Product not found"})
+    
+    await productDocRef.update({
+      price : price,
+      descount : descount
+    })
+    
+    return res.status(200).json({message:"product price updated"})
+  } catch (error) {
+    console.error('Error fetching data:', error.message);
+    return res.status(500).json({ error: 'Failed to fetch data' });
+  }
+}
 
 export { 
   newOutlet,

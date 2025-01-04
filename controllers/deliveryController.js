@@ -1011,11 +1011,10 @@ const verifyPassword = async(req,res)=>{
     const userPassword = userDoc.data().password
     
     if (password != userPassword) {
-      return res.status(400).json({ message: "Password not matched." });
+      return res.status(400).json({ message: "Password not matched.",login });
     }
 
     login = true
-
     return res.status(200).json({message:"passowrd match u can log in",login})
   } catch (error) {
     console.log(error);

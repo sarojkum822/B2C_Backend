@@ -64,7 +64,7 @@ router.route("/personalDocs/dl/:id").post(upload.fields([{ name: 'front', maxCou
 router.route("/vehicleDetails/:id").post(upload.single("img"),vehicleDetails)
 router.route("/getdocstatus/:id").get(getDocsStatus)
 
-router.route('/verifypassword',verifyPassword)
+router.route('/verifypassword').post(verifyPassword)
 
 
 
