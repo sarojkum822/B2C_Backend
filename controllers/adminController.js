@@ -520,7 +520,7 @@ const getProductCount =async(req,res)=>{
 const changeProductprice = async(req,res)=>{
   try {
     const id = req.params.id
-    const {price , descount} = req.body
+    const {rate , descount} = req.body
 
     const db = getFirestore()
     const productDocRef = db.collection("products").doc(id)
@@ -529,7 +529,7 @@ const changeProductprice = async(req,res)=>{
     if(!productDoc.exists) return res.status(404).json({message:"Product not found"})
     
     await productDocRef.update({
-      price : price,
+      rate : rate,
       descount : descount
     })
     
@@ -552,5 +552,6 @@ export {
   getAllOutletsWithOrderAndPartners,
   getOneOutlet,
   approveDelivery,
-  getProductCount
+  getProductCount,
+  changeProductprice
 }
