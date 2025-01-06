@@ -801,48 +801,74 @@ const getCurrentOrders = async (req, res) => {
       deliveryData.totalOrders.orders
         .filter((order) => order.deliveredOrder === "Pending")
         .map(async (order) => {
-          //order inforamtion
-          const orderRef = db.collection("Order").doc(order.id);
-          const orderDoc = await orderRef.get();
-          const data = orderDoc.data()
+          try {
+            // Fetch order information
+            const orderRef = db.collection("Order").doc(order.id);
+            const orderDoc = await orderRef.get();
 
-          const outletRef = db.collection("Outlets").doc(data.outletId)
-          const outletDoc = await outletRef.get()
-          const outletData = outletDoc.data()
+            if (!orderDoc.exists) {
+              console.error(`Order document with ID ${order.id} not found.`);
+              return null;
+            }
 
-          //outlet inforamtion
-          const outletInfo = {
-            outletId: outletData.id,
-            name: outletData.name,
-            address:outletData.address,
-            phone:outletData.phNo
+            const data = orderDoc.data();
+            if (!data?.outletId || !data?.customerId) {
+              console.error(`Invalid order data for order ID ${order.id}`);
+              return null;
+            }
+
+            // Fetch outlet information
+            const outletRef = db.collection("Outlets").doc(data.outletId);
+            const outletDoc = await outletRef.get();
+            const outletData = outletDoc.data();
+
+            const outletInfo = outletData
+              ? {
+                  outletId: outletDoc.id,
+                  name: outletData.name,
+                  address: outletData.address,
+                  phone: outletData.phNo,
+                }
+              : null;
+
+            // Fetch customer information
+            const customerRef = db.collection("Customer").doc(data.customerId);
+            const customerDoc = await customerRef.get();
+            const customerData = customerDoc.data();
+
+            const customerInfo = customerData
+              ? {
+                  id: data.customerId,
+                  name: customerData.name,
+                  phone: customerData.phone,
+                }
+              : null;
+
+            return {
+              orderId: order.id,
+              amount: data.amount,
+              deliveryAddress: data.address,
+              products: data.products,
+              outletInfo,
+              customerInfo,
+            };
+          } catch (error) {
+            console.error(`Error processing order ID ${order.id}:`, error);
+            return null;
           }
-
-          const customerRef = db.collection("Customer").doc(data.customerId)
-          const customerDoc = await customerRef.get()
-          const customerData = customerDoc.data()
-
-          //customer inforamation
-          const customerInfo = {
-            id:data.customerId,
-            name:customerData.name,
-            phone:customerData.phone
-          }
-
-          if (orderDoc.exists) {
-            return { orderId:order.id,amount:data.amount, deliveryAddress:data.address,products:data.products,outletInfo,customerInfo };
-          } 
-          return null;
         })
     );
 
-    // Return the pending orders
-    return res.status(200).json({ pendingOrders, count: pendingOrders.length });
+    // Filter out null values
+    const validPendingOrders = pendingOrders.filter((order) => order !== null);
+
+    res.status(200).json(validPendingOrders);
   } catch (error) {
-    console.error("Error fetching order details:", error);
-    return res.status(500).json({ message: "Server error", error: error.message });
+    console.error("Error fetching orders:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
+
 
 
 const acceptOrder = async(req,res)=>{
