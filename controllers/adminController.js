@@ -517,28 +517,68 @@ const getProductCount =async(req,res)=>{
   }
 }
 
-const changeProductprice = async(req,res)=>{
+const changeProductprice = async (req, res) => {
   try {
-    const id = req.params.id
-    const {rate , descount} = req.body
+    const { id } = req.params; // Destructure id from params
+    const { rate, discount } = req.body; // Destructure rate and discount from body
 
-    const db = getFirestore()
-    const productDocRef = db.collection("products").doc(id)
-    const productDoc = await productDocRef.get()
-    
-    if(!productDoc.exists) return res.status(404).json({message:"Product not found"})
-    
+    // Check if rate and discount are valid
+    if (rate === undefined || discount === undefined) {
+      return res.status(400).json({ message: "Rate and discount are required." });
+    }
+
+    // Get Firestore instance
+    const db = getFirestore();
+    const productDocRef = db.collection("products").doc(id);
+
+    // Check if the product exists
+    const productDoc = await productDocRef.get();
+    if (!productDoc.exists) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Update product data
     await productDocRef.update({
-      rate : rate,
-      descount : descount
-    })
-    
-    return res.status(200).json({message:"product price updated"})
+      rate,
+      discount
+    });
+
+    return res.status(200).json({ message: "Product price updated successfully." });
   } catch (error) {
-    console.error('Error fetching data:', error.message);
-    return res.status(500).json({ error: 'Failed to fetch data' });
+    console.error("Error updating product price:", error.message);
+    return res.status(500).json({ error: "Failed to update product price." });
   }
-}
+};
+
+const getAllProducts = async (req, res) => {
+  try {
+    // Get Firestore instance
+    const db = getFirestore();
+
+    // Reference the "products" collection
+    const productsCollection = db.collection("products");
+
+    // Fetch all documents in the collection
+    const snapshot = await productsCollection.get();
+
+    // Check if the collection is empty
+    if (snapshot.empty) {
+      return res.status(404).json({ message: "No products found." });
+    }
+
+    // Map through the documents and return an array of product data
+    const products = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    return res.status(200).json(products);
+  } catch (error) {
+    console.error("Error fetching products:", error.message);
+    return res.status(500).json({ error: "Failed to fetch products." });
+  }
+};
+
 
 export { 
   newOutlet,
@@ -553,5 +593,6 @@ export {
   getOneOutlet,
   approveDelivery,
   getProductCount,
-  changeProductprice
+  changeProductprice,
+  getAllProducts,
 }
