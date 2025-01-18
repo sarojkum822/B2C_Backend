@@ -299,6 +299,13 @@ const bankDetails=async(req,res)=>{
       return res.status(400).json({ status: "fail", message: "delivery partner id is required number is required." });
     }
 
+    if (!req.file) {
+      removeImg('img')
+      return res
+        .status(400)
+        .json({ status: "fail", message: "No image file provided" });
+    }
+
     if (!accNo || !accHolderName || !ifscCode || !bankName|| !branchName) {
       return res.status(400).json({ status: "fail", message: "All bank details are required." });
     }
@@ -307,6 +314,7 @@ const bankDetails=async(req,res)=>{
     const db = getFirestore();
     const userRef = db.collection(mainCollection).doc(id);
 
+    const img = req.file.path;
     // Bank details object
     const bankDetails = {
       accNo,
@@ -314,6 +322,7 @@ const bankDetails=async(req,res)=>{
       ifscCode,
       bankName,
       branchName,
+      img,
       updatedAt: new Date(),
     };
 
@@ -328,6 +337,7 @@ const bankDetails=async(req,res)=>{
 
     res.status(200).json({ status: "success", message: "Bank details submitted successfully." });
   } catch (error) {
+    removeImg(req.file.path)
     console.error("Error submitting bank details:", error);
     res.status(500).json({ status: "error", message: "Internal Server Error" });
   }
@@ -1021,7 +1031,7 @@ const amountReturnToStore = async(req,res)=>{
 
 const verifyPassword = async(req,res)=>{
   try {
-    const {phone , password} = req.body
+    const {phone , password,token} = req.body
     let login = false
 
     if (!phone) return res.status(400).json({ message: "Phone number is required",login });
@@ -1040,13 +1050,48 @@ const verifyPassword = async(req,res)=>{
       return res.status(400).json({ message: "Password not matched.",login });
     }
 
+    // store login token 
+    await userRef.update({
+      token:token
+    })
+
     login = true
-    return res.status(200).json({message:"passowrd match u can log in",login})
+    return res.status(200).json({message:"passowrd match u can log in token also stored",login})
   } catch (error) {
     console.log(error);
     res.status(500).send({ error: error.message });
   }
 }
+
+const getAllProducts = async (req, res) => {
+  try {
+    // Get Firestore instance
+    const db = getFirestore();
+
+    // Reference the "products" collection
+    const productsCollection = db.collection("products");
+
+    // Fetch all documents in the collection
+    const snapshot = await productsCollection.get();
+
+    // Check if the collection is empty
+    if (snapshot.empty) {
+      return res.status(404).json({ message: "No products found." });
+    }
+
+    // Map through the documents and return an array of product data
+    const products = snapshot.docs.map(doc => ({
+      id: doc.id,
+      name : doc.data().name,
+      countInStock : doc.data().countInStock,
+    }));
+
+    return res.status(200).json(products);
+  } catch (error) {
+    console.error("Error fetching products:", error.message);
+    return res.status(500).json({ error: "Failed to fetch products." });
+  }
+};
 
 export{ 
   deliveryPartnerProfile,
@@ -1072,4 +1117,5 @@ export{
   getDriverrById,
   addRating,
   getOutletIdByDP,
+  getAllProducts,
 }

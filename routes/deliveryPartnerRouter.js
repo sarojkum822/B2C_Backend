@@ -26,7 +26,10 @@ import {
   deleteProfile,
   getDriverrById,
   addRating,
-  getOutletIdByDP
+  getOutletIdByDP,
+
+  // get product
+  getAllProducts
 } from "../controllers/deliveryController.js"
 
 import multer from "multer"
@@ -57,7 +60,7 @@ router.route("/profile").post(upload.single("img"),deliveryPartnerProfile) //aut
 //prodile details
 router.route("/personalInformation").post(upload.single("img"),personalInformation)
 router.route("/genidandpassword/:id").post(generateIdAndPassword)
-router.route("/bankDetails/:id").post(bankDetails)
+router.route("/bankDetails/:id").post(upload.single('img'),bankDetails)
 router.route("/personalDocs/aadharcard/:id").post(upload.fields([{ name: 'front', maxCount: 1 },{ name: 'back', maxCount: 1 }]),uploadAadharDocs)
 router.route("/personalDocs/pancard/:id").post(upload.fields([{ name: 'front', maxCount: 1 },{ name: 'back', maxCount: 1 }]),uploadPanDocs)
 router.route("/personalDocs/dl/:id").post(upload.fields([{ name: 'front', maxCount: 1 },{ name: 'back', maxCount: 1 }]),uploadDLDocs)
@@ -83,5 +86,8 @@ router.route("/:id/rating").patch(addRating)
 
 //DP : delivery partner
 router.route("/getoutletId/:id").get(getOutletIdByDP)
+
+// get all Products
+router.route('/getproduct').get(getAllProducts)
 
 export default router

@@ -520,7 +520,8 @@ const getProductCount =async(req,res)=>{
 const changeProductprice = async (req, res) => {
   try {
     const { id } = req.params; // Destructure id from params
-    const { rate, discount } = req.body; // Destructure rate and discount from body
+    let { rate, discount , inStock} = req.body; // Destructure rate and discount from body
+
 
     // Check if rate and discount are valid
     if (rate === undefined || discount === undefined) {
@@ -537,10 +538,14 @@ const changeProductprice = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Update product data
+    const data = productDoc.data()
+
+
+    // Update product data and check if value for field is given or not
     await productDocRef.update({
-      rate,
-      discount
+      rate :rate?rate:data.rate,
+      discount: discount?discount:data.discount,
+      countInStock : inStock ? inStock : data.countInStock,
     });
 
     return res.status(200).json({ message: "Product price updated successfully." });
