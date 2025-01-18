@@ -16,7 +16,8 @@ import {
   approveDelivery,
   getProductCount,
   changeProductprice,
-  getAllProducts
+  getAllProducts,
+  getOutletPartners
 } from "../controllers/adminController.js"
 
 import authenicateUser from "../middleware/authHandler.js"
@@ -53,6 +54,7 @@ router.route("/customerInsights").get(customerInsights)
 router.route("/deliveryInsights").get(deliveryInsights)
 router.route("/approveDelivery/:id").patch(approveDelivery)
 router.route("/getProductCount").get(getProductCount)
+router.route("/getoutletpartners").patch(getOutletPartners)
 
 router.route("/changeproductprice/:id").patch(changeProductprice)
 router.route("/getallproducts").get(getAllProducts)

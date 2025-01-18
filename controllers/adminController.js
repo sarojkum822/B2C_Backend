@@ -584,6 +584,34 @@ const getAllProducts = async (req, res) => {
   }
 };
 
+const getOutletPartners = async (req, res) => {
+  try {
+    // Get Firestore instance
+    const db = getFirestore();
+
+    // Reference the "products" collection
+    const productsCollection = db.collection("Outlet_partner");
+
+    // Fetch all documents in the collection
+    const snapshot = await productsCollection.get();
+
+    // Check if the collection is empty
+    if (snapshot.empty) {
+      return res.status(404).json({ message: "No outlet partner found." });
+    }
+
+    // Map through the documents and return an array of product data
+    const products = snapshot.docs.map(doc => ({
+      id: doc.id,
+      name : doc.data().firstName + doc.data().lastName
+    }));
+
+    return res.status(200).json(products);
+  } catch (error) {
+    console.error("Error fetching products:", error.message);
+    return res.status(500).json({ error: "Failed to fetch outlet partners." });
+  }
+};
 
 export { 
   newOutlet,
@@ -600,4 +628,5 @@ export {
   getProductCount,
   changeProductprice,
   getAllProducts,
+  getOutletPartners,
 }
