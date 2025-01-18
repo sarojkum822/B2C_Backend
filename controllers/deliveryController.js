@@ -1083,7 +1083,7 @@ const getAllProducts = async (req, res) => {
     const products = snapshot.docs.map(doc => ({
       id: doc.id,
       name : doc.data().name,
-      countInStock : doc.data().countInStock,
+      countInStock : doc.data().countInStock || 0,
     }));
 
     return res.status(200).json(products);
