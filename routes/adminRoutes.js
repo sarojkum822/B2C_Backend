@@ -54,7 +54,7 @@ router.route("/customerInsights").get(customerInsights)
 router.route("/deliveryInsights").get(deliveryInsights)
 router.route("/approveDelivery/:id").patch(approveDelivery)
 router.route("/getProductCount").get(getProductCount)
-router.route("/getoutletpartners").patch(getOutletPartners)
+router.route("/getoutletpartners").get(getOutletPartners)
 
 router.route("/changeproductprice/:id").patch(changeProductprice)
 router.route("/getallproducts").get(getAllProducts)
