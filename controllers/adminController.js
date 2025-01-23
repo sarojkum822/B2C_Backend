@@ -327,12 +327,12 @@ const deliveryInsights = async (req,res)=>{
       drivers.push(
         { 
           id: doc.id,
-          name:doc.data().generalDetails.firstName,
+          name:doc.data().generalDetails.firstName ||" ",
           password: doc.data().password,
           ratings: doc.data().ratings,
           totalDeliveries: doc.data().totalDeliveries,
-          approved:doc.data().approved,
-          region:doc.data().generalDetails.city,
+          approved:doc.data().submissionStatus,
+          region:doc.data().generalDetails.address.fullAddress.city
          });
     });
 
@@ -613,6 +613,42 @@ const getOutletPartners = async (req, res) => {
   }
 };
 
+const getApprovedDP = async(req,res)=>{
+  try {
+    
+    //  Firestore 
+    const db = getFirestore();
+    const approvedDP = db.collection("Delivery_partner").get();
+  
+
+  } catch (error) {
+    console.error("Error fetching products:", error.message);
+    return res.status(500).json({ error: "Failed to fetch delivery partners." });
+  }
+}
+const getDeliveryPartner = async(req,res)=>{
+  try {
+    const id = req.params.id
+
+    if(!id){
+      return res.status(500).json({message:"Delivery partner id needed"})
+    }
+    //  Firestore 
+    const db = getFirestore();
+    const delivaryParnerRef = db.collection("Delivery_partner").doc(id);
+    const deliveryPartnerDoc = await delivaryParnerRef.get()
+    
+    if (!deliveryPartnerDoc.exists) {
+      return res.status(500).json({message:"Delivery partner not found"})
+    }
+
+    return res.status(200).json(deliveryPartnerDoc.data())
+  } catch (error) {
+    console.error("Error fetching products:", error.message);
+    return res.status(500).json({ error: "Failed to fetch delivery partners." });
+  }
+}
+
 export { 
   newOutlet,
   createOutletPartner,
@@ -629,4 +665,6 @@ export {
   changeProductprice,
   getAllProducts,
   getOutletPartners,
+  getApprovedDP,
+  getDeliveryPartner
 }

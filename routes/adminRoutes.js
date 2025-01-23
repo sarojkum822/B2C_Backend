@@ -5,6 +5,7 @@ import multer from "multer"
 import { CloudinaryStorage } from'multer-storage-cloudinary';
 import {cloudinary} from "../utils/cloudinary.js";
 
+
 import {
   newOutlet,
   createOutletPartner,
@@ -17,7 +18,11 @@ import {
   getProductCount,
   changeProductprice,
   getAllProducts,
-  getOutletPartners
+  getOutletPartners,
+
+  //delivery partner----------
+  getApprovedDP,
+  getDeliveryPartner
 } from "../controllers/adminController.js"
 
 import authenicateUser from "../middleware/authHandler.js"
@@ -51,13 +56,18 @@ router.route("/oneOutlet/:id").get(getOneOutlet) //authenicateUser,
 router.route("/addOutletPartner").post( upload.single("img"),createOutletPartner) //authenicateUser,
 router.route("/removeOutletPartner/:userId").delete(deleteOutletPartner) //authenicateUser,
 router.route("/customerInsights").get(customerInsights)
-router.route("/deliveryInsights").get(deliveryInsights)
-router.route("/approveDelivery/:id").patch(approveDelivery)
 router.route("/getProductCount").get(getProductCount)
 router.route("/getoutletpartners").get(getOutletPartners)
 
 router.route("/changeproductprice/:id").patch(changeProductprice)
 router.route("/getallproducts").get(getAllProducts)
+
+//delivery partner (DP)
+router.route("/approveDelivery/:id").patch(approveDelivery)
+router.route("/deliveryInsights").get(deliveryInsights)
+router.route('/getapprovedDP').get(getApprovedDP)
+router.route("/deliverypartner/:id").get(getDeliveryPartner)
+
 
 
 export default router
