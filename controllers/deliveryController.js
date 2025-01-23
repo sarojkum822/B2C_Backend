@@ -123,7 +123,6 @@ const personalInformation = async (req, res) => {
 
     
     address = typeof address == "object" ?address :JSON.parse(address);
-    console.log(address);
     
     if (!req.file) {
       return res
@@ -211,12 +210,6 @@ const personalInformation = async (req, res) => {
       updatedAt: new Date(),
     };
 
-    //total order he delivered
-    const totalOrders = {
-      count:2,
-      orders:[{id:"1111111113-1729774085439"},{id:"1111111113-1729790554963"}]
-    }
-
     //rating inforamation
     const ratingInfo = {
       rating:0,
@@ -231,7 +224,6 @@ const personalInformation = async (req, res) => {
       {
         generalDetails:generalDetails,
         submissionStatus: { generalDetails: false },
-        totalOrders,
         ratingInfo,
         ratings:0,
         totalDeliveries: 0

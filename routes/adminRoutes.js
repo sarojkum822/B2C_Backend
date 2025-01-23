@@ -22,7 +22,8 @@ import {
 
   //delivery partner----------
   getApprovedDP,
-  getDeliveryPartner
+  getDeliveryPartner,
+  createDP
 } from "../controllers/adminController.js"
 
 import authenicateUser from "../middleware/authHandler.js"
@@ -67,6 +68,7 @@ router.route("/approveDelivery/:id").patch(approveDelivery)
 router.route("/deliveryInsights").get(deliveryInsights)
 router.route('/getapprovedDP').get(getApprovedDP)
 router.route("/deliverypartner/:id").get(getDeliveryPartner)
+router.route("/makedeliverypartner").post(createDP)
 
 
 

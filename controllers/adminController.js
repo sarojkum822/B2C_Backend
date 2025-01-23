@@ -327,12 +327,12 @@ const deliveryInsights = async (req,res)=>{
       drivers.push(
         { 
           id: doc.id,
-          name:doc.data().generalDetails.firstName ||" ",
+          name:doc.data().generalDetails?.firstName ||doc.data().firstName,
           password: doc.data().password,
           ratings: doc.data().ratings,
           totalDeliveries: doc.data().totalDeliveries,
-          approved:doc.data().submissionStatus,
-          region:doc.data().generalDetails.address.fullAddress.city
+          approved:doc.data().submissionStatus || doc.data().approved,
+          region:doc.data().generalDetails.address?.fullAddress?.city || ""
          });
     });
 
@@ -342,8 +342,6 @@ const deliveryInsights = async (req,res)=>{
     return res.status(500).json({ message: 'Error fetching delivery drivers', error });
   }
 }
-
-
 
 
 // Handler function to fetch outlets, orders, and partners
@@ -649,6 +647,65 @@ const getDeliveryPartner = async(req,res)=>{
   }
 }
 
+const createDP = async (req, res) => {
+  try {
+    //extract the detailse
+    let {
+      firstName,
+      phone,
+    } = req.body;
+
+    const db = getFirestore();
+
+    //phone number is required
+    if (!phone) {
+      return res.status(400).json({
+        message: "Please enter phone"
+      });
+    }
+    //password 
+
+    const password = `${phone}@${firstName}`
+
+    //general details of dilivery partner
+    const generalDetails = {
+      password,
+      firstName,
+      phone,
+    };
+
+    //rating inforamation
+    const ratingInfo = {
+      rating:0,
+      newCount:0,
+      customers:[],
+    }
+
+    // Firestore reference
+    const userRef = db.collection("Delivery_partner").doc(phone);
+    const userDoc = await userRef.get()
+    //check if user already exists
+    if (userDoc.exists) {
+      return res.status(400).json({message: "Delivery partner already exists"})
+    }
+
+    await userRef.set(
+      {
+        generalDetails:generalDetails,
+        approved:true,
+        ratingInfo,
+        ratings:0,
+        totalDeliveries: 0
+      },
+      { merge: true } // Merge with existing data
+    )
+    res.status(200).json({ status: "success", message: "Delivery partner created!.",password});
+  } catch (error) {
+    console.error("Error creating/updating user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export { 
   newOutlet,
   createOutletPartner,
@@ -666,5 +723,6 @@ export {
   getAllProducts,
   getOutletPartners,
   getApprovedDP,
-  getDeliveryPartner
+  getDeliveryPartner,
+  createDP
 }
