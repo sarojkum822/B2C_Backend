@@ -1021,39 +1021,48 @@ const amountReturnToStore = async(req,res)=>{
 }
 
 
-const verifyPassword = async(req,res)=>{
+const verifyPassword = async (req, res) => {
   try {
-    const {phone , password,token} = req.body
-    let login = false
+    const { phone, password, token } = req.body;
+    console.log(req.body);
 
-    if (!phone) return res.status(400).json({ message: "Phone number is required",login });
+    let login = false;
 
-    const db  = getFirestore()
-    const userRef = db.collection(mainCollection).doc(phone)
-    const userDoc = await userRef.get()
+    // Validate input
+    if (!phone) return res.status(400).json({ message: "Phone number is required", login });
+    if (!password) return res.status(400).json({ message: "Password is required", login });
+
+    const db = getFirestore();
+    const userRef = db.collection(mainCollection).doc(phone);
+    const userDoc = await userRef.get();
 
     if (!userDoc.exists) {
-      return res.status(400).json({ message: "User not found create account.",login });
+      return res.status(400).json({ message: "User not found. Please create an account.", login });
     }
 
-    const userPassword = userDoc.data().password
-    
-    if (password != userPassword) {
-      return res.status(400).json({ message: "Password not matched.",login });
+    const userPassword = userDoc.data().password;
+
+    if (password !== userPassword) {
+      return res.status(400).json({ message: "Password does not match.", login });
     }
 
-    // store login token 
+    // Ensure token is valid before updating Firestore
+    if (typeof token === "undefined") {
+      return res.status(400).json({ message: "Token is required", login });
+    }
+
+    // Store login token
     await userRef.update({
-      token:token
-    })
+      token: token || null, // Use null if token is missing or empty
+    });
 
-    login = true
-    return res.status(200).json({message:"passowrd match u can log in token also stored",login})
+    login = true;
+    return res.status(200).json({ message: "Password matched. Token stored successfully.", login });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(500).send({ error: error.message });
   }
-}
+};
 
 const getAllProducts = async (req, res) => {
   try {

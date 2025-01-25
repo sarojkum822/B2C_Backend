@@ -1,4 +1,4 @@
-import express from "express"
+import express, { urlencoded } from "express"
 import { initializeApp } from "firebase/app"
 import admin from "firebase-admin"
 import NotFound from "./errors/notFound.js"

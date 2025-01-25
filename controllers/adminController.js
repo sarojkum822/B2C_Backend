@@ -461,33 +461,41 @@ const getOneOutlet = async (req, res) => {
   }
 };
 
-const approveDelivery =async(req,res)=>{
+const approveDelivery = async (req, res) => {
   try {
-    const  delivaryParnerId  = req.params.id;
-    
-    //  Firestore initialized
-    const db = getFirestore();
-    //get delivery partner
-    const deliveryDocRef = db.collection("Delivery_partner").doc(delivaryParnerId); // Fetch outlet document using outletId
-    const deliveryDoc = await deliveryDocRef.get(); // Get the document snapshot
-    if (!deliveryDoc.exists) {
-      return res.status(404).json({message:"Delivery partner not found"})
-    }
-    const deliveryData = deliveryDoc.data()
+    const deliveryPartnerId = req.params.id;
 
-    // Update approved field at generalDetails
-    
-    await deliveryDocRef.update({
-      ...deliveryData,
-      approved:true,
-    });
-  
-    return res.status(200).json({message:"delivery partner approved"});
+    // Firestore initialized
+    const db = getFirestore();
+    const deliveryDocRef = db.collection("Delivery_partner").doc(deliveryPartnerId);
+
+    // Get the document snapshot
+    const deliveryDoc = await deliveryDocRef.get();
+    if (!deliveryDoc.exists) {
+      return res.status(404).json({ message: "Delivery partner not found" });
+    }
+
+    const deliveryData = deliveryDoc.data();
+
+    // Check if submissionStatus exists
+    let submissionStatus = deliveryData.submissionStatus;
+
+    if (submissionStatus) {
+      // If submissionStatus exists, make only the present fields true
+      Object.keys(submissionStatus).forEach((key) => {
+        submissionStatus[key] = true;
+      });
+      await deliveryDocRef.update({submissionStatus});
+    } else {
+      await deliveryDocRef.update({approved:true})
+    }
+    return res.status(200).json({ message: "Delivery partner approved" });
   } catch (error) {
-    console.error('Error fetching data:', error.message);
-    return res.status(500).json({ error: 'Failed to fetch data' });
+    console.error("Error approving delivery partner:", error.message);
+    return res.status(500).json({ error: "Failed to approve delivery partner" });
   }
-}
+};
+
 
 const getProductCount =async(req,res)=>{
   try {
