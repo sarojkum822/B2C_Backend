@@ -577,15 +577,14 @@ const getAllProducts = async (req, res) => {
       return res.status(404).json({ message: "No products found." });
     }
 
-    const data = doc.data()
     // Map through the documents and return an array of product data
     const products = snapshot.docs.map(doc => ({
       id: doc.id,
-      currentPrice:data.price,
-      price: data.rate - (data.rate*data.discount),
-      name:data.name,
-      countInStock:data.countInStock,
-      discount:data.discount,
+      currentPrice:doc.data().rate,
+      price: doc.data().rate - (doc.data().rate*(doc.data().discount/100)),
+      name:doc.data().name,
+      countInStock:doc.data().countInStock,
+      discount:doc.data().discount,
     }));
 
     return res.status(200).json(products);
