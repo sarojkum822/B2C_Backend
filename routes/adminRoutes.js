@@ -57,8 +57,10 @@ router.route("/oneOutlet/:id").get(getOneOutlet) //authenicateUser,
 router.route("/addOutletPartner").post( upload.single("img"),createOutletPartner) //authenicateUser,
 router.route("/removeOutletPartner/:userId").delete(deleteOutletPartner) //authenicateUser,
 router.route("/customerInsights").get(customerInsights)
+
 router.route("/getProductCount").get(getProductCount)
 router.route("/getoutletpartners").get(getOutletPartners)
+
 
 router.route("/changeproductprice/:id").patch(changeProductprice)
 router.route("/getallproducts").get(getAllProducts)

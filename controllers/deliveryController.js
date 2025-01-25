@@ -923,6 +923,7 @@ const acceptOrder = async(req,res)=>{
     })
 
     await orderRef.update({
+      status:"Accepted",
       orderAcceptedByRider:true,
       deliveryPartnerId:did,
     })
