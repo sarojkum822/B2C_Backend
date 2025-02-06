@@ -42,8 +42,8 @@ const newOrder = async (req, res) => {
 
  // check for nearest outlet
     const orderCoordinates = { lat: parseFloat(address.coordinates.lat), long: parseFloat(address.coordinates.long)}; // Input coordinates
-    let maxDistance = 3; // Maximum distance in kilometers
-    let distance=3
+    let maxDistance = 5; // Maximum distance in kilometers
+    let distance=5
     const outletsRef = db.collection('Outlets');
     const snapshot = await outletsRef.get();
     
@@ -84,15 +84,11 @@ const newOrder = async (req, res) => {
   const orderAcceptedByRider = false
 
   //to assign the increasing count to the product 
-  const countRef = db.collection(mainCollection).doc("count-orders")
-  const countDoc = await countRef.get()
-  const count = countDoc.data().count
+  const countRef = await db.collection(mainCollection).get();
+  const count = countRef.size;
   
   // Generate a unique ID for the order
   const id = `${customerId}-${createdAt}-${count+1}`;
-  await countRef.update({
-    count:count+1
-  })
 
   try {
     // 1. Create the new order in Firestorep

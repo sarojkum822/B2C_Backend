@@ -975,7 +975,7 @@ const markOrderDelivered = async (req, res) => {
       return res.status(404).json({ message: "Order not assigned to this delivery partner." });
     }
 
-    if (orderToUpdate.deliveredOrder !== "Pending") {
+    if (orderToUpdate.deliveredOrder === "Delivered") {
       return res.status(400).json({ message: "Order is already delivered." });
     }
 
@@ -984,12 +984,14 @@ const markOrderDelivered = async (req, res) => {
     // Update wallet
     const updatedWallet = (deliveryData.wallet || 0) + (orderData.amount || 0);
 
+    const totalDeliveries = (deliveryData.totalDeliveries || 0) +1
     // Update the database with new data
     await deliveryRef.update({
       "totalOrders.orders": deliveryData.totalOrders.orders,
       wallet: updatedWallet,
+      totalDeliveries,
     });
-    orderRef.update({
+    await orderRef.update({
       status: "Delivered"
     })
     console.log(orderData);
