@@ -84,7 +84,9 @@ const updateUser = async (req, res) => {
     const phone = req.params.phone;
     const { name, email, age, gender, removeAddr } = req.body;
     
-    if (!phone) return res.status(400).json({ message: "Phone number is required" });
+    if (!phone) {
+      return res.status(400).json({ message: "Phone number is required" });
+    }
 
     // Ensure addresses is an array
     let addresses = Array.isArray(req.body.addresses) ? req.body.addresses : [];
@@ -100,19 +102,22 @@ const updateUser = async (req, res) => {
 
     // Retrieve existing user data
     const userData = userDoc.data();
-    const updatedData = {
-      name: name || userData.name,
-      email: email || userData.email,
-      age: age || userData.age,
-      gender: gender || userData.gender,
-      addresses: userData.addresses || []
-    };
+    let updatedData = {};
+
+    // Update only fields that are explicitly provided
+    if (name !== undefined) updatedData.name = name;
+    if (email !== undefined) updatedData.email = email;
+    if (age !== undefined) updatedData.age = age;
+    if (gender !== undefined) updatedData.gender = gender;
+
+    // Start with existing addresses
+    let updatedAddresses = [...(userData.addresses || [])];
 
     // Remove address if index is valid
     if (removeAddr !== undefined) {
       const ind = parseInt(removeAddr, 10);
-      if (!isNaN(ind) && ind >= 0 && ind < updatedData.addresses.length) {
-        updatedData.addresses.splice(ind, 1);
+      if (!isNaN(ind) && ind >= 0 && ind < updatedAddresses.length) {
+        updatedAddresses.splice(ind, 1);
       } else {
         return res.status(400).json({ message: "Invalid address index" });
       }
@@ -120,7 +125,17 @@ const updateUser = async (req, res) => {
 
     // Append new addresses if provided
     if (addresses.length > 0) {
-      updatedData.addresses = [...updatedData.addresses, ...addresses];
+      updatedAddresses = [...updatedAddresses, ...addresses];
+    }
+
+    // Only update addresses if there is a change
+    if (JSON.stringify(updatedAddresses) !== JSON.stringify(userData.addresses)) {
+      updatedData.addresses = updatedAddresses;
+    }
+
+    // Ensure Firestore update() does not receive empty object
+    if (Object.keys(updatedData).length === 0) {
+      return res.status(400).json({ message: "No valid fields provided for update" });
     }
 
     // Update Firestore document
@@ -135,6 +150,8 @@ const updateUser = async (req, res) => {
     console.error(err);
   }
 };
+
+
 
 
 
