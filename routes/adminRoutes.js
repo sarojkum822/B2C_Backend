@@ -21,6 +21,8 @@ import {
   getOutletPartners,
 
 
+  //order------------
+  deleteOrder,
   //outlet--------------
   deleteOutlet,
 
@@ -70,8 +72,10 @@ router.route("/getoutletpartners").get(getOutletPartners)
 router.route("/changeproductprice/:id").patch(changeProductprice)
 router.route("/getallproducts").get(getAllProducts)
 
-//Outlet---------------------
 
+//orders-------------------
+router.route("/order/delete/:id").delete(deleteOrder)
+//Outlet---------------------
 router.route("/outlet/delete/:id").delete(deleteOutlet)
 
 //delivery partner (DP)

@@ -746,19 +746,41 @@ const deleteOutlet = async(req,res)=>{
     const id = req.params.id
 
     if (!id) {
-      return res.status(500).json({message:"Delivery partner id nedded!."})
+      return res.status(500).json({message:"Outlet id nedded!."})
     }
 
     const db = getFirestore()
-    const deliveryRef = db.collection("Outlets").doc(id)
-    const deliveryDoc = await deliveryRef.get()
+    const outletRef = db.collection("Outlets").doc(id)
+    const outletDoc = await outletRef.get()
 
-    if (!deliveryDoc.exists) {
-      return res.status(500).json({message:"Delivery partner not found!."})
+    if (!outletDoc.exists) {
+      return res.status(500).json({message:"outlet not found!."})
     }
 
-    await deliveryRef.delete()
-    return res.status(200).json({message:"Delivery partner removed succefully!"})
+    await outletRef.delete()
+    return res.status(200).json({message:"Outlet removed succefully!"})
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({message:"Internal Server error"})
+  }
+}
+
+const deleteOrder = async(req,res)=>{
+  try {
+    const id = req.params.id
+
+    if (!id) {
+      return res.status(500).json({message:"Order id nedded!."})
+    }
+    const db = getFirestore()
+    const orderRef = db.collection("Order").doc(id)
+    const orderDoc = await orderRef.get()
+
+    if (!orderDoc.exists) {
+      return res.status(500).json({message:"Order not found!."})
+    }
+    await orderRef.delete()
+    return res.status(200).json({message:"Order removed succefully!"})
   } catch (error) {
     console.log(error);
     return res.status(500).json({message:"Internal Server error"})
@@ -785,5 +807,6 @@ export {
   getDeliveryPartner,
   createDP,
   deleteDP,
-  deleteOutlet
+  deleteOutlet,
+  deleteOrder
 }
