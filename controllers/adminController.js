@@ -718,6 +718,53 @@ const createDP = async (req, res) => {
   }
 };
 
+const deleteDP = async(req,res)=>{
+  try {
+    const id = req.params.id
+
+    if (!id) {
+      return res.status(500).json({message:"Delivery partner id nedded!."})
+    }
+
+    const db = getFirestore()
+    const deliveryRef = db.collection("Delivery_partner").doc(id)
+    const deliveryDoc = await deliveryRef.get()
+
+    if (!deliveryDoc.exists) {
+      return res.status(500).json({message:"Delivery partner not found!."})
+    }
+
+    await deliveryRef.delete()
+    return res.status(200).json({message:"Delivery partner removed succefully!"})
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({message:"Internal Server error"})
+  }
+}
+const deleteOutlet = async(req,res)=>{
+  try {
+    const id = req.params.id
+
+    if (!id) {
+      return res.status(500).json({message:"Delivery partner id nedded!."})
+    }
+
+    const db = getFirestore()
+    const deliveryRef = db.collection("Outlets").doc(id)
+    const deliveryDoc = await deliveryRef.get()
+
+    if (!deliveryDoc.exists) {
+      return res.status(500).json({message:"Delivery partner not found!."})
+    }
+
+    await deliveryRef.delete()
+    return res.status(200).json({message:"Delivery partner removed succefully!"})
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({message:"Internal Server error"})
+  }
+}
+
 export { 
   newOutlet,
   createOutletPartner,
@@ -736,5 +783,7 @@ export {
   getOutletPartners,
   getApprovedDP,
   getDeliveryPartner,
-  createDP
+  createDP,
+  deleteDP,
+  deleteOutlet
 }

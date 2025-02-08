@@ -20,10 +20,15 @@ import {
   getAllProducts,
   getOutletPartners,
 
+
+  //outlet--------------
+  deleteOutlet,
+
   //delivery partner----------
   getApprovedDP,
   getDeliveryPartner,
-  createDP
+  createDP,
+  deleteDP,
 } from "../controllers/adminController.js"
 
 import authenicateUser from "../middleware/authHandler.js"
@@ -65,12 +70,17 @@ router.route("/getoutletpartners").get(getOutletPartners)
 router.route("/changeproductprice/:id").patch(changeProductprice)
 router.route("/getallproducts").get(getAllProducts)
 
+//Outlet---------------------
+
+router.route("/outlet/delete/:id").delete(deleteOutlet)
+
 //delivery partner (DP)
 router.route("/approveDelivery/:id").patch(approveDelivery)
 router.route("/deliveryInsights").get(deliveryInsights)
 router.route('/getapprovedDP').get(getApprovedDP)
 router.route("/deliverypartner/:id").get(getDeliveryPartner)
 router.route("/makedeliverypartner").post(createDP)
+router.route("/deliverypartner/delete/:id").delete(deleteDP)
 
 
 
