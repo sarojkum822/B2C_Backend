@@ -32,6 +32,8 @@ import {
   getDeliveryPartner,
   createDP,
   deleteDP,
+
+  getAllCountInformation,
 } from "../controllers/adminController.js"
 
 import authenicateUser from "../middleware/authHandler.js"
@@ -89,6 +91,9 @@ router.route("/deliverypartner/:id").get(getDeliveryPartner)
 router.route("/makedeliverypartner").post(createDP)
 router.route("/deliverypartner/delete/:id").delete(deleteDP)
 
+
+// all data count for dashboard
+router.route('/dashboard/inforamtion').get(getAllCountInformation)
 
 
 export default router

@@ -912,6 +912,45 @@ const filteringOrders = async (req, res) => {
   }
 };
 
+const getAllCountInformation = async (req, res) => {
+  try {
+    const db = getFirestore();
+
+    const information = {
+      totalOutlets: 0,
+      totalCustomers: 0,
+      totalEarning: 0,
+      totalOrders: 0,
+      totalOutletPartners:0,
+    };
+
+    // Get orders collection
+    const ordersSnapshot = await db.collection("Order").get();
+    information.totalOrders = ordersSnapshot.size;
+
+    ordersSnapshot.forEach((doc) => {
+      information.totalEarning += doc.data().amount || 0;
+    });
+
+    // Get unique outlets
+    const outletsSnapshot = await db.collection("Outlets").get();
+    information.totalOutlets = outletsSnapshot.size;
+
+    // Get unique customers
+    const customersSnapshot = await db.collection("Customer").get();
+    information.totalCustomers = customersSnapshot.size;
+
+    const outletPartners = await db.collection("Outlet_partner").get();
+    information.totalOutletPartners = outletPartners.size;
+
+    return res.status(200).json({ data: information });
+  } catch (error) {
+    console.error("Error fetching count information:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+
 export { 
   newOutlet,
   createOutletPartner,
@@ -934,5 +973,6 @@ export {
   deleteDP,
   deleteOutlet,
   deleteOrder,
-  filteringOrders
+  filteringOrders,
+  getAllCountInformation
 }
