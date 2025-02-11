@@ -1,6 +1,7 @@
 import { FieldValue, getFirestore } from "firebase-admin/firestore"
 import InternalError from "../errors/internalError.js"
 import {removeImg} from "../utils/imageRemove.js"
+import admin from 'firebase-admin'
 
 const outletCollection = "Outlets"
 const deliveryCollection = "Delivery_partner"
@@ -98,6 +99,43 @@ const partnerRef = db.collection('Outlet_partner').doc(phone);  // Fetch documen
   res.status(200).json({ message: req.body })
 }
 
+const filterOrders = async (startDate, endDate) => {
+  const db = getFirestore()
+  const ordersCollection = db.collection("Order");
+
+  // Fetch orders in the date range
+  const snapshot = await ordersCollection
+      .where("createdAt", ">=", startDate)
+      .where("createdAt", "<=", endDate)
+      .get();
+
+  let totalEarnings = 0;
+  let totalOrders = 0;
+  let uniqueOutlets = new Set();
+  let uniqueCustomers = new Set();
+
+  snapshot.forEach((doc) => {
+      const order = doc.data();
+      totalEarnings += order.amount || 0;
+      totalOrders += 1;
+      uniqueOutlets.add(order.outletId);
+      uniqueCustomers.add(order.customerId);
+  });
+
+  return {
+      totalEarnings,
+      totalOrders,
+      uniqueOutlets: [...uniqueOutlets], // Convert Set to Array
+      uniqueCustomers: [...uniqueCustomers],
+  };
+};
+
+const fetchCounts = async (outletIds, customerIds) => {
+  const outletCount = outletIds.length;
+  const customerCount = customerIds.length;
+
+  return { totalOutlets: outletCount, totalCustomers: customerCount };
+};
 
 const deleteOutletPartner=async (req,res)=>{
   try {
@@ -787,6 +825,93 @@ const deleteOrder = async(req,res)=>{
   }
 }
 
+const filteringOrders = async (req, res) => {
+  try {
+      let { filter } = req.query;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let results = [];
+
+      if (filter === "month") {
+          // Fetch previous 10 months
+          for (let i = 9; i >= 0; i--) {
+              const start = new Date(today.getFullYear(), today.getMonth() - i, 1);
+              const end = new Date(today.getFullYear(), today.getMonth() - i + 1, 0, 23, 59, 59);
+
+              const orderData = await filterOrders(
+                  admin.firestore.Timestamp.fromDate(start),
+                  admin.firestore.Timestamp.fromDate(end)
+              );
+
+              const counts = await fetchCounts(orderData.uniqueOutlets, orderData.uniqueCustomers);
+
+              results.push({
+                  month: start.toLocaleString("en-US", { month: "short" }), // e.g., "Jan", "Feb"
+                  totalEarnings: orderData.totalEarnings,
+                  totalOrders: orderData.totalOrders,
+                  totalOutlets: counts.totalOutlets,
+                  totalCustomers: counts.totalCustomers,
+              });
+          }
+      } else if (filter === "year") {
+          // Fetch previous 10 years
+          for (let i = 9; i >= 0; i--) {
+              const year = today.getFullYear() - i;
+              const start = new Date(year, 0, 1);
+              const end = new Date(year, 11, 31, 23, 59, 59);
+
+              const orderData = await filterOrders(
+                  admin.firestore.Timestamp.fromDate(start),
+                  admin.firestore.Timestamp.fromDate(end)
+              );
+
+              const counts = await fetchCounts(orderData.uniqueOutlets, orderData.uniqueCustomers);
+
+              results.push({
+                  year: year,
+                  totalEarnings: orderData.totalEarnings,
+                  totalOrders: orderData.totalOrders,
+                  totalOutlets: counts.totalOutlets,
+                  totalCustomers: counts.totalCustomers,
+              });
+          }
+      } else if (filter === "week") {
+          // Fetch previous 10 days including today
+          for (let i = 9; i >= 0; i--) {
+              const start = new Date(today);
+              start.setDate(today.getDate() - i);
+              start.setHours(0, 0, 0, 0);
+
+              const end = new Date(start);
+              end.setHours(23, 59, 59, 999);
+
+              const orderData = await filterOrders(
+                  admin.firestore.Timestamp.fromDate(start),
+                  admin.firestore.Timestamp.fromDate(end)
+              );
+
+              const counts = await fetchCounts(orderData.uniqueOutlets, orderData.uniqueCustomers);
+
+              results.push({
+                  day: start.toLocaleString("en-US", { weekday: "short" }), // e.g., "Tue", "Mon"
+                  totalEarnings: orderData.totalEarnings,
+                  totalOrders: orderData.totalOrders,
+                  totalOutlets: counts.totalOutlets,
+                  totalCustomers: counts.totalCustomers,
+              });
+          }
+      } else {
+          return res.status(400).json({ error: "Invalid filter type" });
+      }
+
+      res.status(200).json({ data: results });
+  } catch (error) {
+      console.error("Error fetching summary:", error);
+      res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export { 
   newOutlet,
   createOutletPartner,
@@ -808,5 +933,6 @@ export {
   createDP,
   deleteDP,
   deleteOutlet,
-  deleteOrder
+  deleteOrder,
+  filteringOrders
 }

@@ -23,6 +23,7 @@ import {
 
   //order------------
   deleteOrder,
+  filteringOrders,
   //outlet--------------
   deleteOutlet,
 
@@ -68,13 +69,15 @@ router.route("/customerInsights").get(customerInsights)
 router.route("/getProductCount").get(getProductCount)
 router.route("/getoutletpartners").get(getOutletPartners)
 
-
+//products ---------
 router.route("/changeproductprice/:id").patch(changeProductprice)
 router.route("/getallproducts").get(getAllProducts)
 
 
 //orders-------------------
 router.route("/order/delete/:id").delete(deleteOrder)
+router.route("/orders/summary").get(filteringOrders)
+
 //Outlet---------------------
 router.route("/outlet/delete/:id").delete(deleteOutlet)
 
