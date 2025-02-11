@@ -526,7 +526,7 @@ const getProductCount =async(req,res)=>{
 const changeProductprice = async (req, res) => {
   try {
     const { id } = req.params; // Destructure id from params
-    let { rate, discount , inStock} = req.body; // Destructure rate and discount from body
+    let { rate, discount , countInStock} = req.body; // Destructure rate and discount from body
 
 
     // Check if rate and discount are valid
@@ -551,7 +551,7 @@ const changeProductprice = async (req, res) => {
     await productDocRef.update({
       rate :rate?rate:data.rate,
       discount: discount?discount:data.discount,
-      countInStock : inStock ? inStock : data.countInStock,
+      countInStock : countInStock ? countInStock : data.countInStock,
     });
 
     return res.status(200).json({ message: "Product price updated successfully." });
