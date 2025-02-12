@@ -219,118 +219,79 @@ const linkPartner = async (req, res) => {
   //Whenever token is updated next time , Partener will then receive notfications from particular outletß
 }
 
-
 const customerInsights = async (req, res) => {
   try {
     const db = getFirestore();
 
-    // Fetch customers ordered by totalOrders in descending order
-    const customersSnapshot = await db.collection('Customer')
-      .orderBy('totalOrders', 'desc')  // Order by totalOrders in descending order
-      .get();
+    const customersSnapshot = await db.collection('Customer').orderBy('totalOrders', 'desc').get();
+    const totalCustomers = customersSnapshot.size;
 
-    const totalCustomers = customersSnapshot.size
-    const ageGroup=[0,0,0,0,0,0] // [0-25,25-35,35,45,45-60,60+,notDefined]
-    let inactiveCust=0,newCust=0,returningCust=0,male=0,female=0,others=0;
+    const ageGroup = [0, 0, 0, 0, 0, 0]; 
+    let inactiveCust = 0, newCust = 0, returningCust = 0, male = 0, female = 0, others = 0;
 
-    // Map the snapshot to extract specific fields
     const customers = customersSnapshot.docs.map(doc => {
       const data = doc.data();
-
-      //aggregating age groups
-      let age=parseInt(data.age,10)
-      if(age<=25) ageGroup[0]++;
-      else if(age<=35) ageGroup[1]++;
-      else if(age<=45) ageGroup[2]++;
-      else if(age<=60) ageGroup[3]++;
-      else if(age<=100)ageGroup[4]++;
-      else ageGroup[5]++;
       
-      //agregating old,new & inactive customers
-      const totalOrders=data.totalOrders
-      if(totalOrders==0) inactiveCust++;
-      else if(totalOrders==1) newCust++;
+      // Handle missing or undefined fields
+      const age = parseInt(data.age, 10) || 0;
+      if (age > 0) {
+        if (age <= 25) ageGroup[0]++;
+        else if (age <= 35) ageGroup[1]++;
+        else if (age <= 45) ageGroup[2]++;
+        else if (age <= 60) ageGroup[3]++;
+        else if (age <= 100) ageGroup[4]++;
+        else ageGroup[5]++;
+      }
+      
+      const totalOrders = data.totalOrders || 0;
+      if (totalOrders === 0) inactiveCust++;
+      else if (totalOrders === 1) newCust++;
       else returningCust++;
+      
+      const gender = data.gender ? data.gender.toLowerCase() : '';
+      if (gender === 'male') male++;
+      else if (gender === 'female') female++;
+      else others++;
 
-      //male or female
-      if(data.gender.toLowerCase()==="male") male++;
-      else if(data.gender.length==0) others++;
-      else female++
-
-      //returning onle name,phone,orders and expenditure to req
       return {
-        name: data.name,
-        phone:data.phone,
-        totalOrders: data.totalOrders,
-        totalExpenditure: data.totalExpenditure
+        name: data.name || 'Unknown',
+        phone: data.phone || 'N/A',
+        totalOrders,
+        totalExpenditure: data.totalExpenditure || 0
       };
     });
-    
-    
-    //converting data into %
 
-    for(let k=0;k<6;k++){
-      ageGroup[k]=ageGroup[k]*100.0/totalCustomers;
-    }
-    male=male*100.0/totalCustomers;
-    female=female*100.0/totalCustomers;
-    others=others*100.0/totalCustomers;
-    inactiveCust=inactiveCust*100.0/totalCustomers;
-    newCust=newCust*100.0/totalCustomers;
-    returningCust=returningCust*100.0/totalCustomers
+    for (let k = 0; k < 6; k++) ageGroup[k] = (ageGroup[k] * 100.0) / totalCustomers;
+    male = (male * 100.0) / totalCustomers;
+    female = (female * 100.0) / totalCustomers;
+    others = (others * 100.0) / totalCustomers;
+    inactiveCust = (inactiveCust * 100.0) / totalCustomers;
+    newCust = (newCust * 100.0) / totalCustomers;
+    returningCust = (returningCust * 100.0) / totalCustomers;
 
-    
-    // Fetch customers ordered by totalOrders in descending order
     const ordersSnapshot = await db.collection('Order').get();
     const orders = ordersSnapshot.docs.map(doc => doc.data());
 
-    // Create a map to count orders by area
     const areaCounts = {};
-
     orders.forEach(order => {
-      const area = order.address?.area;  // Safely access address.area
-
-      if (area) {
-        if (!areaCounts[area]) {
-          areaCounts[area] = 0;
-        }
-        areaCounts[area] += 1;
-      }
+      const area = order.address?.area || 'Unknown';
+      areaCounts[area] = (areaCounts[area] || 0) + 1;
     });
 
-    // Calculate the total number of orders
     const totalOrders = orders.length;
-
-    // Convert the areaCounts map to an array of [area, count] pairs
-    let areaArray = Object.entries(areaCounts);
-
-    // Sort the areas by the number of orders in descending order
+    let areaArray = Object.entries(areaCounts).map(([area, count]) => [area, (count * 100.0) / totalOrders]);
     areaArray.sort((a, b) => b[1] - a[1]);
-     for(let i=0;i<areaArray.length;i++)
-      areaArray[i][1]=areaArray[i][1]*100.0/totalOrders
 
-
-
-
-    // Send the extracted data as a JSON response
     res.status(200).json({
       customers,
-      aggergation:{
-        
-         areaArray,
-      
-        ageGroup:{
-          "<25":ageGroup[0],
-          "<35":ageGroup[1],
-          "<45":ageGroup[2],
-          "<60":ageGroup[3],
-          "60+":ageGroup[4],
-          "oth":ageGroup[5],
-
+      aggregation: {
+        areaArray,
+        ageGroup: {
+          '<25': ageGroup[0], '<35': ageGroup[1], '<45': ageGroup[2], '<60': ageGroup[3], '60+': ageGroup[4], 'oth': ageGroup[5]
         },
         totalCustomers,
         inactiveCust,
-        custEnquiry:0,
+        custEnquiry: 0,
         newCust,
         returningCust,
         male,
@@ -339,11 +300,10 @@ const customerInsights = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error getting customers:', error);
+    console.error('Error getting customer insights:', error);
     return res.status(500).json({ message: 'Internal Server Error' });
   }
 };
-
 
 
 const deliveryInsights = async (req,res)=>{
