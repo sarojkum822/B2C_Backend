@@ -121,66 +121,13 @@ const personalInformation = async (req, res) => {
       languageKnown,
     } = req.body;
 
-    
-    address = typeof address == "object" ?address :JSON.parse(address);
-    
     if (!req.file) {
       return res
         .status(400)
         .json({ status: "fail", message: "No image file provided" });
     }
-    if(!address || !address.coordinates){
-      removeImg(req.file.path)
-      return res.status(400).json({status:"fail",message:"please enter all details of delivery partner with lat,long in address"})
-    }
+
     const db = getFirestore();
-
-    //find the nearest outlets
-    const deliveryPartnerCordinates = { lat: parseFloat(address.coordinates.lat), long: parseFloat(address.coordinates.long)}; // Input coordinates
-    let maxDistance = 3; // Maximum distance in kilometers
-    let distance=3
-
-    const outletsRef = db.collection('Outlets');
-    const snapshot = await outletsRef.get();
-    
-    let nearbyOutlet ={};
-
-    snapshot.forEach(doc => {
-      const outletData = doc.data();
-      const outletCoords = outletData.address.coordinates;
-      
-      distance = haversineDistance(deliveryPartnerCordinates, {
-        lat: parseFloat(outletCoords.lat),
-        long: parseFloat(outletCoords.long)
-      });
-      
-      if (distance < maxDistance) {
-        maxDistance=distance
-        nearbyOutlet={
-          id:outletData.id || 'NA',
-          name:outletData.name || 'NA',
-          phNo:outletData.phNo || 'NA',
-          img:outletData.img || 'NA',
-          distance:distance.toFixed(2) + 'KM',
-          address:outletData.address
-        };
-      }
-    });
-
-    if (Object.keys(nearbyOutlet).length==0) {
-      return res.status(404).json({status:"fail",message:'No nearby outlets, we will soon expand here!!'});
-    }
-    
-    const outletId = nearbyOutlet.id
-    const outletRef = db.collection("Outlets").doc(outletId);
-    const outletData = await outletRef.get();
-
-    if (outletData.exists) {
-      const data = outletData.data()
-      await outletRef.update({
-        deleveryPartners : [...data.deleveryPartners,phone]
-      })
-    }
 
     //phone number is required
     if (!phone) {
@@ -206,7 +153,7 @@ const personalInformation = async (req, res) => {
       address,
       image: img || null,
       languageKnown: languageKnown ? languageKnown.split(",") : [],
-      nearbyOutlet,
+      outletId : [],
       updatedAt: new Date(),
     };
 
@@ -230,13 +177,14 @@ const personalInformation = async (req, res) => {
       },
       { merge: true } // Merge with existing data
     )
-    res.status(200).json({ status: "success", message: "personal details submitted and assign to the near by outlet successfully ." });
+    res.status(200).json({ status: "success", message: "personal details submitted! ." });
   } catch (error) {
     removeImg(req.file.path)
     console.error("Error creating/updating user:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 const generateIdAndPassword =async(req,res)=>{
   try {
@@ -335,63 +283,65 @@ const bankDetails=async(req,res)=>{
   }
 }
 
-const uploadAadharDocs =async(req,res)=>{
-     try {
-      const id = req.params.id
+const uploadAadharDocs = async (req, res) => {
+  try {
+    const id = req.params.id;
 
-      // Check if both images are provided
-      if (!req.files.front || !req.files.back) {
-        return res.status(400).json({ message: 'Front and Back image of Aadhaar card is required.' });
-      }
-      //delivery partner id is required
-      if (!id) {
-        await removeImg(req.file.front[0].path);
-        await removeImg(req.file.back[0].path);
-        return res.status(400).json({
-          message: "Please enter delivery Partner id"
-        });
-      }
+    // Check if both images are provided
+    if (!req.files || !req.files.front || !req.files.back) {
+      return res.status(400).json({ message: 'Front and Back image of Aadhaar card is required.' });
+    }
 
-      const frontImage = req.files.front[0].path
-      const backImage = req.files.back[0].path
+    // Validate ID before accessing images
+    if (!id) {
+      await removeImg(req.files.front?.[0]?.path);
+      await removeImg(req.files.back?.[0]?.path);
+      return res.status(400).json({ message: "Please enter delivery Partner ID" });
+    }
 
-      const aadharDoc ={
-        frontImage:frontImage,
-        backImage:backImage
-      }
+    const frontImage = req.files.front[0].path;
+    const backImage = req.files.back[0].path;
 
-      const db = getFirestore()
-      const userRef = db.collection(mainCollection).doc(id)
+    const aadharDoc = {
+      frontImage: frontImage,
+      backImage: backImage
+    };
 
-      //store the information
-      await userRef.set({
-          personalDocs:{aadharDoc},
-          submissionStatus :{personalDocs:false}
-        },
-        { merge:true }
-      )
+    const db = getFirestore();
+    const userRef = db.collection(mainCollection).doc(id);
 
-      res.status(200).json({ status: "success", message: "Aadhar document submitted successfully." });
-     } catch (error) {
-      await removeImg(req.file.front[0].path);
-      await removeImg(req.file.back[0].path);
-      console.error("Error submitting bank details:", error);
-      res.status(500).json({ status: "error", message: "Internal Server Error" });
-     }
-}
+    // Store the information
+    await userRef.set(
+      {
+        personalDocs: { aadharDoc },
+        submissionStatus: { personalDocs: false }
+      },
+      { merge: true }
+    );
+
+    res.status(200).json({ status: "success", message: "Aadhar document submitted successfully." });
+  } catch (error) {
+    // Ensure req.files exists before accessing properties
+    if (req.files?.front) await removeImg(req.files.front[0].path);
+    if (req.files?.back) await removeImg(req.files.back[0].path);
+
+    console.error("Error submitting Aadhar documents:", error.message);
+    res.status(500).json({ status: "error", message: "Internal Server Error" });
+  }
+};
 
 const uploadPanDocs =async(req,res)=>{
   try {
    const id = req.params.id
 
    // Check if both images are provided
-   if (!req.files.front || !req.files.back) {
+   if (!req.files || !req.files.front || !req.files.back) {
      return res.status(400).json({ message: 'Front and Back image of Pan card is required.' });
    }
 
    if (!id) {
-    await removeImg(req.file.front[0].path);
-    await removeImg(req.file.back[0].path);
+    await removeImg(req.files.front?.[0]?.path);
+    await removeImg(req.files.back?.[0]?.path);
     return res.status(400).json({
       message: "Please enter delivery Partner id"
     });
@@ -415,8 +365,8 @@ const uploadPanDocs =async(req,res)=>{
 
    res.status(200).json({ status: "success", message: "Pan Card document submitted successfully." });
   } catch (error) {
-    await removeImg(req.file.front[0].path);
-    await removeImg(req.file.back[0].path);
+    if (req.files?.front) await removeImg(req.files.front[0].path);
+    if (req.files?.back) await removeImg(req.files.back[0].path);
     console.error("Error submitting bank details:", error);
     res.status(500).json({ status: "error", message: "Internal Server Error" });
   }
@@ -427,21 +377,19 @@ const uploadDLDocs =async(req,res)=>{
    const id = req.params.id
 
    // Check if both images are provided
-   if (!req.files.front || !req.files.back) {
+   if (!req.files || !req.files.front || !req.files.back) {
      return res.status(400).json({ message: 'Front and Back image of DL is required.' });
    }
 
    if (!id) {
-    await removeImg(req.file.front[0].path);
-    await removeImg(req.file.back[0].path);
+    await removeImg(req.files.front?.[0]?.path);
+    await removeImg(req.files.back?.[0]?.path);
     return res.status(400).json({
       message: "Please enter delivery Partner id"
     });
    }
    const frontImage = req.files.front[0].path
    const backImage = req.files.back[0].path
-   console.log(frontImage);
-   console.log(backImage);
    
    const DLDoc ={
      frontImage:frontImage,
@@ -459,8 +407,8 @@ const uploadDLDocs =async(req,res)=>{
 
    res.status(200).json({ status: "success", message: "DL Card document submitted successfully." });
   } catch (error) {
-    await removeImg(req.file.front[0].path);
-    await removeImg(req.file.back[0].path);
+    if (req.files?.front) await removeImg(req.files.front[0].path);
+    if (req.files?.back) await removeImg(req.files.back[0].path);
     console.error("Error submitting bank details:", error);
     res.status(500).json({ status: "error", message: "Internal Server Error" });
   }
