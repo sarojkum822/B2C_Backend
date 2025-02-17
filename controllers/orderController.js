@@ -3,7 +3,6 @@ import { sendNotification } from "./outletController.js";
 
 const mainCollection = "Order";
 
-
 // Haversine formula to calculate distance between two coordinates
 function haversineDistance(coords1, coords2) {
   const toRad = (value) => (value * Math.PI) / 180;
@@ -42,9 +41,9 @@ const newOrder = async (req, res) => {
   const db = getFirestore();
 
  // check for nearest outlet
- const orderCoordinates = { lat: parseFloat(address.coordinates.lat), long: parseFloat(address.coordinates.long)}; // Input coordinates
-    let maxDistance = 3; // Maximum distance in kilometers
-    let distance=3
+    const orderCoordinates = { lat: parseFloat(address.coordinates.lat), long: parseFloat(address.coordinates.long)}; // Input coordinates
+    let maxDistance = 5; // Maximum distance in kilometers
+    let distance=5
     const outletsRef = db.collection('Outlets');
     const snapshot = await outletsRef.get();
     
@@ -78,16 +77,21 @@ const newOrder = async (req, res) => {
 
  // creatig order for nearest outlet
   const outletId=nearbyOutlet.id
-  const deleveryDistance=distance.toFixed(3) + "KM"
+  const deleveryDistance=distance.toFixed(6) + "KM"
   const createdAt=Date.now();
   const updatedAt=createdAt
-  const status="pending";
+  const status="Pending";
+  const orderAcceptedByRider = false
 
-  // Generate a unique ID for the order
-  const id = `${customerId}-${createdAt}`;
+  //to assign the increasing count to the product 
+  const countRef = await db.collection(mainCollection).get();
+  const count = countRef.size;
   
+  // Generate a unique ID for the order
+  const id = `${customerId}-${createdAt}-${count+1}`;
+
   try {
-    // 1. Create the new order in Firestore
+    // 1. Create the new order in Firestorep
     const orderData={
       address, // Address and coordinates
       amount, // Total amount of the order
@@ -97,7 +101,8 @@ const newOrder = async (req, res) => {
       outletId, // ID of the outlet
       customerId, // ID of the customer
       deleveryDistance,
-      status
+      status,
+      orderAcceptedByRider
     }
     await db.collection(mainCollection).doc(id).set(orderData);
     
@@ -121,25 +126,51 @@ const newOrder = async (req, res) => {
 
 
       // 5. Changing total sale in Outlate 
-    const outletRef = db.collection("Outlets").doc(outletId); // Fetch outlet document using outletId
-    const outletDoc = await outletRef.get(); // Get the document snapshot
-    
-    if (outletDoc.exists) {
+      const outletRef = db.collection("Outlets").doc(outletId); // Fetch outlet document using outletId
+      const outletDoc = await outletRef.get(); // Get the document snapshot
       const outletData = outletDoc.data(); // Get the document data
-    
-      // Check if totalSales exists and has properties, if not, initialize them
-      const totalSales = outletData.totalSales || { E6: 0, E12: 0, E30: 0 };
-    
-      await outletRef.update({
-        totalSales: {
-          E6: (totalSales.E6 || 0) + (products.E6 || 0),
-          E12: (totalSales.E12 || 0) + (products.E12 || 0),
-          E30: (totalSales.E30 || 0) + (products.E30 || 0),
-        }
-      });
-    }
 
+      if (outletDoc.exists) {      
+        // Check if totalSales exists and has properties, if not, initialize them
+        const totalSales = outletData.totalSales || { E6: 0, E12: 0, E30: 0 };
+      
+        await outletRef.update({
+          totalSales: {
+            E6: (totalSales.E6 || 0) + (products.E6 || 0),
+            E12: (totalSales.E12 || 0) + (products.E12 || 0),
+            E30: (totalSales.E30 || 0) + (products.E30 || 0),
+          }
+        });
+      }
+      //notification
 
+      // sendNotification(outletData,address,outletData.id);
+
+      //Total order of product
+        const productCounts = {
+          "6pc_tray": "E6",
+          "12pc_tray": "E12",
+          "30pc_tray": "E30",
+        };
+        const productRef = db.collection("products");
+        const productsDoc = await productRef.get();
+
+        productsDoc.forEach(async (doc) => {
+          const data = doc.data();
+          const productKey = productCounts[data.name];
+        
+          // Check if the product name has a corresponding entry in productCounts
+          if (productKey && products[productKey] != null) {
+            try {
+              // Update the `count` field in the document
+              await doc.ref.update({
+                count: (data.count||0) + (products[productKey]||0),
+              });
+            } catch (error) {
+              console.error(`Error updating count for product ${doc.id}:`, error);
+            }
+          }
+        }); 
 
       // Return success response
       return res.status(200).json({ 
@@ -153,9 +184,6 @@ const newOrder = async (req, res) => {
       // 6. Return an error message for customer not found
       return res.status(400).json({ message: 'Customer not found, order deleted' });
     }
-
-    
-
     // (Optional) Sending notifications (Uncomment if needed)
     // sendNotification(outletId, address.fullAddress, id);
 
@@ -214,6 +242,53 @@ const getAllOrders = async (req, res) => {
 }
 
 
+const getorderDetailsbyId = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    if (!id) {
+      return res.status(400).json({ message: "Order ID is required!" });
+    }
+
+    const db = getFirestore();
+
+    //get order details and descard unwanted details
+    const orderDocRef = db.collection(mainCollection).doc(id);
+    const orderDoc = await orderDocRef.get();
+    if (!orderDoc.exists) {
+      return res.status(404).json({ message: "Order not found!" });
+    }
+    const orderData = { id: orderDoc.id, ...orderDoc.data() };
+    const {outletId,customerId,...orderInfo} = orderData
+
+    // Fetch customer details and descard the unwanted details
+    const customerDocRef = db.collection("Customer").doc(customerId);
+    const customerDoc = await customerDocRef.get();
+    if (!customerDoc.exists) {
+      return res.status(404).json({ message: "Customer not found!" });
+    }
+    const customerData = { id: customerDoc.id, ...customerDoc.data() };
+    const {timeOfCreation,addresses,totalExpenditure,totalOrders,...customerInfo} = customerData
+
+    // Fetch outlet details and exclude unwanted fields
+    const outletDocRef = db.collection("Outlets").doc(outletId);
+    const outletDoc = await outletDocRef.get();
+    if (!outletDoc.exists) {
+      return res.status(404).json({ message: "Outlet not found!" });
+    }
+    const outDataRaw = { id: outletDoc.id, ...outletDoc.data() };
+    const { totalSales, deleveryPartners, ...outletInfo } = outDataRaw;
+
+    // Consolidate response
+    const order = { order: orderInfo, customer: customerInfo, outlet: outletInfo };
+    res.status(200).json(order);
+
+  } catch (error) {
+    console.error("Error fetching order details:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 
 // Handler function to find all outlets within 5 km range from the given coordinates
 // const findNearbyOutlets = async (req, res) => {
@@ -269,4 +344,8 @@ const getAllOrders = async (req, res) => {
 
 
 
-export { newOrder,getAllOrders}
+export { 
+  newOrder,
+  getAllOrders,
+  getorderDetailsbyId
+}
