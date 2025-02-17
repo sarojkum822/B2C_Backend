@@ -62,18 +62,18 @@ const upload = multer({ storage });
 
 
 router.route("/addOutlet").post( upload.single("img"),newOutlet) //authenicateUser,
-router.route("/allOutlet").get(getAllOutletsWithOrderAndPartners) //authenicateUser,
 router.route("/oneOutlet/:id").get(getOneOutlet) //authenicateUser,
 router.route("/addOutletPartner").post( upload.single("img"),createOutletPartner) //authenicateUser,
 router.route("/removeOutletPartner/:userId").delete(deleteOutletPartner) //authenicateUser,
 router.route("/customerInsights").get(customerInsights)
 
 router.route("/getProductCount").get(getProductCount)
-router.route("/getoutletpartners").get(getOutletPartners)
 
 //products ---------
 router.route("/changeproductprice/:id").patch(changeProductprice)
 router.route("/getallproducts").get(getAllProducts)
+router.route("/allOutlet").get(getAllOutletsWithOrderAndPartners) //authenicateUser,
+
 
 
 //orders-------------------
@@ -82,6 +82,7 @@ router.route("/orders/summary").get(filteringOrders)
 
 //Outlet---------------------
 router.route("/outlet/delete/:id").delete(deleteOutlet)
+router.route("/getoutletpartners").get(getOutletPartners)
 
 //delivery partner (DP)
 router.route("/approveDelivery/:id").patch(approveDelivery)

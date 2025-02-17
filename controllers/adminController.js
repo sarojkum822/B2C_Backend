@@ -611,7 +611,8 @@ const getOutletPartners = async (req, res) => {
     // Map through the documents and return an array of product data
     const products = snapshot.docs.map(doc => ({
       id: doc.id,
-      name : doc.data().firstName || ''  + doc.data().lastName || ""
+      name : doc.data().firstName || ''  + doc.data().lastName || "",
+      data:doc.data()
     }));
 
     return res.status(200).json(products);
