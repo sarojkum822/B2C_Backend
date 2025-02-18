@@ -289,6 +289,34 @@ const getorderDetailsbyId = async (req, res) => {
   }
 };
 
+const cancelOrder = async (req, res) => {
+  try {
+      const orderId = req.params.orderId;
+
+      if(!orderId) return res.status(500).json({message:"Order id is required!"})
+
+      const db = getFirestore()
+      const orderRef = db.collection('Order').doc(orderId);
+      const orderDoc = await orderRef.get();
+
+      if (!orderDoc.exists) {
+          return res.status(404).json({ message: 'Order not found' });
+      }
+
+      const orderData = orderDoc.data();
+
+      if (orderData?.status !== 'Pending') {
+          return res.status(400).json({ message: 'Order cannot be canceled' });
+      }
+
+      await orderRef.update({ status: 'canceled' });
+
+      return res.json({ message: 'Order canceled successfully', orderId });
+  } catch (error) {
+      return res.status(500).json({ message: 'Error canceling order', error: error.message });
+  }
+}
+
 
 // Handler function to find all outlets within 5 km range from the given coordinates
 // const findNearbyOutlets = async (req, res) => {
@@ -347,5 +375,6 @@ const getorderDetailsbyId = async (req, res) => {
 export { 
   newOrder,
   getAllOrders,
-  getorderDetailsbyId
+  getorderDetailsbyId,
+  cancelOrder
 }

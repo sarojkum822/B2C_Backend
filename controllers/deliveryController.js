@@ -842,6 +842,7 @@ const acceptOrder = async(req,res)=>{
     }
     const orderData = orderDoc.data()
     const orderAcceptedByRider = orderData.orderAcceptedByRider || false
+    
     if (orderAcceptedByRider) {
       return res.status(400).json({ message: "Order is already accepted by Some other delivery partner." });
     }
