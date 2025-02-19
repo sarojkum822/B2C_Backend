@@ -139,7 +139,7 @@ const fetchCounts = async (outletIds, customerIds) => {
 
 const deleteOutletPartner = async (req, res) => {
   try {
-    const id = req.params.userId;
+    const id = req.params.id;
     if (!id) {
       return res.status(400).json({ message: "Outlet partner ID is required." });
     }
