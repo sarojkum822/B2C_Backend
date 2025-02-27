@@ -1,18 +1,10 @@
-<<<<<<< HEAD
 import express, { urlencoded } from "express"
 import { initializeApp } from "firebase/app"
 import admin from "firebase-admin"
 import NotFound from "./errors/notFound.js"
 import dotenv from "dotenv"
 dotenv.config()
-=======
-import express from "express";
-import { initializeApp } from "firebase/app";
-import admin from "firebase-admin";
-import NotFound from "./errors/notFound.js";
-import dotenv from "dotenv";
-dotenv.config();
->>>>>>> f8a11c2 (Added notification for order placement)
+
 
 import cors from "cors";
 import customerRouter from "./routes/customerRoutes.js";
@@ -59,11 +51,7 @@ app.all("*", () => {
 
 app.use(errorHandler);
 
-<<<<<<< HEAD
 const port = process.env.PORT || 3000
-=======
-const port = process.env.PORT || 5000;
->>>>>>> f8a11c2 (Added notification for order placement)
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
