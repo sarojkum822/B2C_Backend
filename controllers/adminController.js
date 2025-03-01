@@ -137,28 +137,34 @@ const fetchCounts = async (outletIds, customerIds) => {
   return { totalOutlets: outletCount, totalCustomers: customerCount };
 };
 
-const deleteOutletPartner=async (req,res)=>{
+const deleteOutletPartner = async (req, res) => {
   try {
-  
-    const userId = req.params.userId;
-    const db = getFirestore()
+    const id = req.params.id;
+    if (!id) {
+      return res.status(400).json({ message: "Outlet partner ID is required." });
+    }
 
-    // Reference to the Firestore document for the user
-    const userRef = db.collection('Outlet_partner').doc(userId);
+    const db = getFirestore();
+    const userRef = db.collection('Outlet_partner').doc(id);
     const driverDoc = await userRef.get();
 
+    if (!driverDoc.exists) {
+      return res.status(404).json({ message: "Partner not found." });
+    }
 
-    await removeImg(driverDoc.data().img)
+    const img = driverDoc.data()?.img;
+    if (img) {
+      await removeImg(img);
+    }
+
     await userRef.delete();
     
-    // Send a response indicating the user was successfully deleted
-    res.status(200).json({ message: `Partner with ID ${userId} deleted successfully.` });
+    res.status(200).json({ message: `Partner with ID ${id} deleted successfully.` });
   } catch (error) {
-    // Handle errors (e.g., if user ID doesn't exist)
     console.error('Error deleting Partner:', error);
     res.status(500).json({ message: 'Error deleting partner', error: error.message });
   }
-}
+};
 
 
 
@@ -605,13 +611,14 @@ const getOutletPartners = async (req, res) => {
 
     // Check if the collection is empty
     if (snapshot.empty) {
-      return res.status(404).json({ message: "No outlet partner found." });
+      return res.status(404).json({ message: "No outlet partners found." });
     }
 
     // Map through the documents and return an array of product data
     const products = snapshot.docs.map(doc => ({
       id: doc.id,
-      name : doc.data().firstName || ''  + doc.data().lastName || ""
+      name : doc.data().firstName || ''  + doc.data().lastName || "",
+      data:doc.data()
     }));
 
     return res.status(200).json(products);
@@ -909,6 +916,42 @@ const getAllCountInformation = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+const updateOutletPartner = async (req, res) => {
+  try {
+    const { userId } = req.params; // Get ID from request params
+    const updateData = req.body; // Other form fields
+    const db = getFirestore();
+
+    if (!userId) {
+      return res.status(400).json({ message: "Outlet partner ID is required." });
+    }
+
+    const userRef = db.collection("Outlet_partner").doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return res.status(404).json({ message: "Outlet partner not found." });
+    }
+
+    let img = userDoc.data()?.img; // Default to old image
+
+    // Check if a new image was uploaded
+    if (req.file) {
+      await removeImg(img); // Remove old image from storage
+      img = req.file.path; 
+    }
+
+    // Update Firestore document with new data (including new image URL)
+    await userRef.update({
+      ...updateData,
+      img: img, // Update image URL if changed
+    });
+    res.status(200).json({ message: `Partner with ID ${userId} updated successfully.` });
+  } catch (error) {
+    console.error("Error updating partner:", error);
+    res.status(500).json({ message: "Error updating partner", error: error.message });
+  }
+};
 
 
 export { 
@@ -934,5 +977,7 @@ export {
   deleteOutlet,
   deleteOrder,
   filteringOrders,
-  getAllCountInformation
+  getAllCountInformation,
+  updateOutletPartner,
+
 }
