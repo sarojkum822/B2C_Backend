@@ -367,14 +367,57 @@ const cancelOrder = async (req, res) => {
 //   }
 // };
 
+//for shipping charges
+
+
+const settingsCollection = "Settings";
+const shippingDocId = "shipping";
+
+// Get Shipping Charge
+const getShippingCharge = async (req, res) => {
+    try {
+        const db = getFirestore();
+        const shippingDoc = await db.collection(settingsCollection).doc(shippingDocId).get();
+
+        if (shippingDoc.exists) {
+            const shippingData = shippingDoc.data();
+            res.status(200).json({ charge: shippingData.charge || 0 });
+        } else {
+            res.status(404).json({ message: "Shipping charge not found." });
+        }
+    } catch (error) {
+        console.error("Error getting shipping charge:", error);
+        res.status(500).json({ message: "Internal server error." });
+    }
+};
+
+// Update Shipping Charge
+const updateShippingCharge = async (req, res) => {
+    try {
+        const { charge } = req.body;
+        if (typeof charge !== 'number') {
+            return res.status(400).json({ message: "Charge must be a number." });
+        }
+
+        const db = getFirestore();
+        await db.collection(settingsCollection).doc(shippingDocId).set({ charge });
+
+        res.status(200).json({ message: "Shipping charge updated successfully." });
+    } catch (error) {
+        console.error("Error updating shipping charge:", error);
+        res.status(500).json({ message: "Internal server error." });
+    }
+};
 
 
 
+export {
+    newOrder,
+    getAllOrders,
+    getorderDetailsbyId,
+    cancelOrder,
+    getShippingCharge,
+    updateShippingCharge,
+};
 
 
-export { 
-  newOrder,
-  getAllOrders,
-  getorderDetailsbyId,
-  cancelOrder
-}
