@@ -48,7 +48,7 @@ app.use("/api/v1/notification", notificationRouter);  // Register the notificati
 app.all("*", () => {
   throw new NotFound("Invalid route");
 });
-
+ 
 app.use(errorHandler);
 
 const port = process.env.PORT || 3000
