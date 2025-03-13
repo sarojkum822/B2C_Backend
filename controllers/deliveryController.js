@@ -632,7 +632,7 @@ const fetchAllOrders = async(req,res)=>{
         porducts:orderDoc.data().products,
         price:orderDoc.data().amount,
         orderDate:orderDoc.data().createdAt, 
-        deliveredStatus : orderDoc.data().deliveredStatus || false
+        deliveredStatus : orderDoc.data().status || false
       } : null
     ).filter(order => order !== null); // Filter out any null entries for missing documents
 
@@ -866,7 +866,7 @@ const acceptOrder = async (req, res) => {
     };
 
     const totalOrders = {
-      count: (deliveryData?.totalOrders?.count || 0) + 1,
+      count: (deliveryData?.totalOrders?.length || 0) + 1,
       orders: [...(deliveryData?.totalOrders?.orders || []), newOrder],
     };
 
