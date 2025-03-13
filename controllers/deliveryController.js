@@ -632,7 +632,7 @@ const fetchAllOrders = async(req,res)=>{
         porducts:orderDoc.data().products,
         price:orderDoc.data().amount,
         orderDate:orderDoc.data().createdAt, 
-        deliveredStatus : orderDoc.data().deliveredStatus || false
+        deliveredStatus : orderDoc.data().status || false
       } : null
     ).filter(order => order !== null); // Filter out any null entries for missing documents
 
