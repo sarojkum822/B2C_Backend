@@ -675,13 +675,14 @@ const createDP = async (req, res) => {
     } = req.body;
 
     const db = getFirestore();
-    //phone number is required
     if (!phone || !password) {
       return res.status(400).json({
         message: "All info required"
       });
     }
-    //password 
+
+
+    const image = req.file ? req.file.path : null;
 
     // const password = `${phone}@${firstName}`
 
@@ -690,6 +691,7 @@ const createDP = async (req, res) => {
       password,
       firstName,
       phone,
+      image,
     };
 
     //rating inforamation

@@ -97,7 +97,7 @@ router.route("/approveDelivery/:id").patch(approveDelivery)
 router.route("/deliveryInsights").get(deliveryInsights)
 router.route('/getapprovedDP').get(getApprovedDP)
 router.route("/deliverypartner/:id").get(getDeliveryPartner)
-router.route("/makedeliverypartner").post(createDP)
+router.route("/makedeliverypartner").post(upload.single("image"), createDP)
 router.route("/deliverypartner/delete/:id").delete(deleteDP)
 
 
