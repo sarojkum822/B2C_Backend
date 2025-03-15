@@ -88,6 +88,7 @@ router.route("/outlet/delete/:id").delete(deleteOutlet)
 router.route("/getoutletpartners").get(getOutletPartners)
 router.route("/removeOutletPartner/:id").delete(deleteOutletPartner) //authenicateUser,
 router.route("/updateOutletPartner/:userId").patch(upload.single("img"), updateOutletPartner);
+//newly added
 router.route("/addDelPartner-outlet/:outletId").patch(addDeliveryPartnerToOutlet);
 router.route("/updateOutlet/:outletId").patch(upload.single("img"), updateOutlet);
 
