@@ -741,28 +741,31 @@ const getDeliveryPartner = async(req,res)=>{
 const createDP = async (req, res) => {
   try {
     //extract the detailse
+    
     let {
       firstName,
       phone,
+      password,
     } = req.body;
 
     const db = getFirestore();
-
-    //phone number is required
-    if (!phone) {
+    if (!phone || !password) {
       return res.status(400).json({
-        message: "Please enter phone"
+        message: "All info required"
       });
     }
-    //password 
 
-    const password = `${phone}@${firstName}`
+
+    const image = req.file ? req.file.path : null;
+
+    // const password = `${phone}@${firstName}`
 
     //general details of dilivery partner
     const generalDetails = {
       password,
       firstName,
       phone,
+      image,
     };
 
     //rating inforamation
