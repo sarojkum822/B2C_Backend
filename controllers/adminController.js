@@ -62,6 +62,69 @@ catch (err){
 }
 }
 
+const updateOutlet = async (req, res) => {
+  try {
+    const { outletId } = req.params;
+    const updateData = req.body;
+    const newImage = req.file ? req.file.path : null;
+    const db = getFirestore();
+
+    if (!outletId || !updateData) {
+      return res.status(400).json({ error: "Invalid request data" });
+    }
+
+    const outletRef = db.collection("Outlets").doc(outletId);
+    const doc = await outletRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: "Outlet not found" });
+    }
+
+    const existingData = doc.data();
+    const dataToUpdate = { ...updateData };
+
+    // If a new image is uploaded, remove the old image from Cloudinary
+    if (newImage && existingData.img) {
+      await removeImg(existingData.img);
+      dataToUpdate.img = newImage; // Update with new image
+    }
+
+    // Handle delivery partners correctly
+    // Check if delivery partners are in the request body
+    if (req.body.deleveryPartners) {
+      // If it's a string, convert to array (handles single selection)
+      if (typeof req.body.deleveryPartners === 'string') {
+        dataToUpdate.deleveryPartners = [req.body.deleveryPartners];
+      } 
+      // If it's already an array, use as is
+      else if (Array.isArray(req.body.deleveryPartners)) {
+        dataToUpdate.deleveryPartners = req.body.deleveryPartners;
+      }
+    }
+
+    // Handle location object if present
+    if (req.body.location && typeof req.body.location === 'string') {
+      try {
+        dataToUpdate.location = JSON.parse(req.body.location);
+      } catch (error) {
+        console.error("Error parsing location JSON:", error);
+        return res.status(400).json({ error: "Invalid location data format" });
+      }
+    }
+
+    // Update Firestore document
+    await outletRef.update(dataToUpdate);
+
+    res.status(200).json({ 
+      message: "Outlet updated successfully",
+      outletId: outletId
+    });
+  } catch (error) {
+    console.error("Error updating outlet:", error);
+    res.status(500).json({ error: "Internal server error", details: error.message });
+  }
+};
+
 const createOutletPartner = async (req, res) => {
  
   const { firstName,lastName,aadharNo,password,phone } = req.body
@@ -351,48 +414,59 @@ const deliveryInsights = async (req,res)=>{
 // Handler function to fetch outlets, orders, and partners
 const getAllOutletsWithOrderAndPartners = async (req, res) => {
   try {
-
     const db = getFirestore();
+
     // Fetch all outlets from the Outlet collection
     const outlets = await db.collection('Outlets').get();
-    const totalOutlets=outlets.size
-    const outletData = outlets.docs.map(doc => (
-      { 
+    const totalOutlets = outlets.size;
+
+    const outletData = outlets.docs.map(doc => {
+      const data = doc.data(); // Get all data from the document
+      const address = data.address || {}; // Safe access to address
+      const coordinates = address.coordinates || {}; // Safe access to coordinates
+      const fullAddress = address.fullAddress || {}; // safe access to fullAddress
+
+      return {
         id: doc.id,
-        name:doc.data().name,
-        area:doc.data().address.fullAddress.area,
-        outletPartnerId:doc.data().outletPartnerId,
-        contact:doc.data().phNo,
-        lat:doc.data().address.coordinates.lat,
-        long:doc.data().address.coordinates.long,
-      }));
+        name: data.name,
+        area: fullAddress.area || null, // Handle missing area
+        outletPartnerId: data.outletPartnerId,
+        contact: data.phNo,
+        lat: coordinates.lat || null, // Handle missing lat
+        long: coordinates.long || null, // Handle missing long
+        ...data, // Include all other data
+      };
+    });
 
     // Fetch total number of orders from the Order collection
     const orders = await db.collection('Order').get();
-    const totalOrders = orders.size; // size gives the count of documents in the collection
-    let revenue=0;
-    orders.docs.forEach(doc =>{
-        revenue+=doc.data().amount
-    });  //doc.data()
+    const totalOrders = orders.size;
 
-    // Fetch all outlet partners from the OutletPartner collection
+    let revenue = 0;
+    orders.docs.forEach(doc => {
+      const orderData = doc.data();
+      revenue += orderData.amount || 0; // Handle missing amount
+    });
+
+    
+    // Fetch all outlet partners from the Delivery_partner collection
     const partners = await db.collection('Delivery_partner').get();
-    const totalPartners=partners.size
+    const totalPartners = partners.size;
 
     // Create the response object with all the data
     const response = {
       revenue,
-      totalOrders,      // Send total number of orders
+      totalOrders,
       totalOutlets,
       totalPartners,
-      outlets: outletData
+      outlets: outletData,
     };
 
     // Send the combined response
     return res.status(200).json(response);
   } catch (error) {
     console.error('Error fetching data:', error.message);
-    return res.status(500).json({ error: 'Failed to fetch data' });
+    return res.status(500).json({ error: 'Failed to fetch data', details: error.message }); //add details to error.
   }
 };
 
@@ -996,41 +1070,7 @@ const addDeliveryPartnerToOutlet = async (req, res) => {
   }
 };
 
-const updateOutlet = async (req, res) => {
-  try {
-    const { outletId } = req.params;
-    const updateData = req.body;
-    const newImage = req.file ? req.file.path : null;
-    const db = getFirestore();
 
-    if (!outletId || !updateData) {
-      return res.status(400).json({ error: "Invalid request data" });
-    }
-
-    const outletRef = db.collection("Outlets").doc(outletId);
-    const doc = await outletRef.get();
-
-    if (!doc.exists) {
-      return res.status(404).json({ error: "Outlet not found" });
-    }
-
-    const existingData = doc.data();
-
-    // If a new image is uploaded, remove the old image from Cloudinary
-    if (newImage && existingData.img) {
-      await removeImg(existingData.img);
-      updateData.img = newImage; // Update with new image
-    }
-
-    // Update Firestore document
-    await outletRef.update(updateData);
-
-    res.status(200).json({ message: "Outlet updated successfully" });
-  } catch (error) {
-    console.error("Error updating outlet:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-};
 
 
 export { 
