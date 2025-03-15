@@ -270,6 +270,7 @@ const getorderDetailsbyId = async (req, res) => {
     const customerData = { id: customerDoc.id, ...customerDoc.data() };
     const {timeOfCreation,addresses,totalExpenditure,totalOrders,...customerInfo} = customerData
 
+    
     // Fetch outlet details and exclude unwanted fields
     const outletDocRef = db.collection("Outlets").doc(outletId);
     const outletDoc = await outletDocRef.get();
