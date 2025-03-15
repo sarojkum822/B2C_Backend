@@ -8,7 +8,7 @@ const deliveryCollection = "Delivery_partner"
 
 const newOutlet = async (req, res) => {
   try{
-    const { name, phNo, location ,id,outletPartnerId,} = req.body
+    const { name, phNo, location , id, outletPartnerId,} = req.body
     if (!req.file) {
       return res
         .status(400)
@@ -916,6 +916,8 @@ const getAllCountInformation = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
+
+
 const updateOutletPartner = async (req, res) => {
   try {
     const { userId } = req.params; // Get ID from request params
@@ -953,6 +955,80 @@ const updateOutletPartner = async (req, res) => {
   }
 };
 
+const addDeliveryPartnerToOutlet = async (req, res) => {
+  try {
+    const { outletId } = req.params;
+    const { delPartners = [], remPartners = [] } = req.body; 
+    const db = getFirestore();
+
+    if (!outletId) {
+      return res.status(400).json({ message: "Outlet ID is required." });
+    }
+
+    const userRef = db.collection("Outlets").doc(outletId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return res.status(404).json({ message: "Outlet not found." });
+    }
+
+    const data = userDoc.data();
+    const deliveryPartners = data.deleveryPartners || [];
+
+    // Remove the partners from the list
+    const afterRemoval = deliveryPartners.filter(partner => !remPartners.includes(partner));
+
+    // Add new delivery partners without duplicates
+    const updatedPartners = Array.from(new Set([...afterRemoval, ...delPartners]));
+
+    // Update Firestore document
+    await userRef.update({
+      deleveryPartners: updatedPartners,
+    });
+
+    res.status(200).json({ message: "Delivery partners updated successfully." });
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+const updateOutlet = async (req, res) => {
+  try {
+    const { outletId } = req.params;
+    const updateData = req.body;
+    const newImage = req.file ? req.file.path : null;
+    const db = getFirestore();
+
+    if (!outletId || !updateData) {
+      return res.status(400).json({ error: "Invalid request data" });
+    }
+
+    const outletRef = db.collection("Outlets").doc(outletId);
+    const doc = await outletRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: "Outlet not found" });
+    }
+
+    const existingData = doc.data();
+
+    // If a new image is uploaded, remove the old image from Cloudinary
+    if (newImage && existingData.img) {
+      await removeImg(existingData.img);
+      updateData.img = newImage; // Update with new image
+    }
+
+    // Update Firestore document
+    await outletRef.update(updateData);
+
+    res.status(200).json({ message: "Outlet updated successfully" });
+  } catch (error) {
+    console.error("Error updating outlet:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
 
 export { 
   newOutlet,
@@ -979,5 +1055,6 @@ export {
   filteringOrders,
   getAllCountInformation,
   updateOutletPartner,
-
+  addDeliveryPartnerToOutlet,
+  updateOutlet
 }
