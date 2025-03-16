@@ -448,7 +448,6 @@ const getAllOutletsWithOrderAndPartners = async (req, res) => {
       revenue += orderData.amount || 0; // Handle missing amount
     });
 
-    
     // Fetch all outlet partners from the Delivery_partner collection
     const partners = await db.collection('Delivery_partner').get();
     const totalPartners = partners.size;
