@@ -2,8 +2,8 @@ import express from "express"
 
 import multer from "multer"
 
-import { CloudinaryStorage } from'multer-storage-cloudinary';
-import {cloudinary} from "../utils/cloudinary.js";
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { cloudinary } from "../utils/cloudinary.js";
 
 
 import {
@@ -29,7 +29,6 @@ import {
   deleteOutlet,
   updateOutletPartner,
   addDeliveryPartnerToOutlet,
-  updateOutlet,
 
   //delivery partner----------
   getApprovedDP,
@@ -38,6 +37,7 @@ import {
   deleteDP,
 
   getAllCountInformation,
+  updateOutlet,
 } from "../controllers/adminController.js"
 
 import authenicateUser from "../middleware/authHandler.js"
@@ -50,14 +50,14 @@ const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'OutletB2C', // Folder where images will be stored in Cloudinary
-       
+
     public_id: (req, file) => `${Date.now()}`, // Public ID (filename)
     transformation: [
       { width: 800, height: 600, crop: "limit" }, // Resize
       { quality: "auto:good" } // Automatically adjust quality
     ],
   },
-  
+
 });
 
 
@@ -65,9 +65,9 @@ const upload = multer({ storage });
 
 
 
-router.route("/addOutlet").post( upload.single("img"),newOutlet) //authenicateUser,
+router.route("/addOutlet").post(upload.single("img"), newOutlet) //authenicateUser,
 router.route("/oneOutlet/:id").get(getOneOutlet) //authenicateUser,
-router.route("/addOutletPartner").post( upload.single("img"),createOutletPartner) //authenicateUser,
+router.route("/addOutletPartner").post(upload.single("img"), createOutletPartner) //authenicateUser,
 router.route("/customerInsights").get(customerInsights)
 
 router.route("/getProductCount").get(getProductCount)
@@ -90,7 +90,14 @@ router.route("/removeOutletPartner/:id").delete(deleteOutletPartner) //authenica
 router.route("/updateOutletPartner/:userId").patch(upload.single("img"), updateOutletPartner);
 //newly added
 router.route("/addDelPartner-outlet/:outletId").patch(addDeliveryPartnerToOutlet);
-router.route("/updateOutlet/:outletId").patch(upload.single("img"), updateOutlet);
+// Update outlet details with optional image upload
+router.route("/outlet/update/:outletId")
+  .patch(
+    // Optional authentication middleware
+    // authenicateUser,
+    upload.single("img"),
+    updateOutlet
+  );
 
 
 //delivery partner (DP)
