@@ -62,68 +62,97 @@ catch (err){
 }
 }
 
-const updateOutlet = async (req, res) => {
+// Add this to your adminController.js file
+
+// Updates an existing outlet
+export const updateOutlet = async (req, res) => {
   try {
     const { outletId } = req.params;
-    const updateData = req.body;
-    const newImage = req.file ? req.file.path : null;
+    
+    // Get data from request body
+    const { 
+      name, 
+      phNo, 
+      address, 
+      outletPartnerId, 
+      deleveryPartners 
+    } = req.body;
+    
     const db = getFirestore();
-
-    if (!outletId || !updateData) {
-      return res.status(400).json({ error: "Invalid request data" });
+    const outletRef = db.collection(outletCollection).doc(outletId);
+    const outletDoc = await outletRef.get();
+    
+    // Check if outlet exists
+    if (!outletDoc.exists) {
+      return res.status(404).json({ 
+        status: "fail", 
+        message: "Outlet not found" 
+      });
     }
-
-    const outletRef = db.collection("Outlets").doc(outletId);
-    const doc = await outletRef.get();
-
-    if (!doc.exists) {
-      return res.status(404).json({ error: "Outlet not found" });
+    
+    // Prepare update data
+    const updateData = {};
+    
+    // Only update fields that are provided
+    if (name) updateData.name = name;
+    if (phNo) updateData.phNo = phNo;
+    if (outletPartnerId) updateData.outletPartnerId = outletPartnerId;
+    
+    // Handle nested address update if provided
+    if (address) {
+      // Parse address if it's a string, otherwise use as is
+      const addressData = typeof address === 'string' ? JSON.parse(address) : address;
+      updateData.address = addressData;
     }
-
-    const existingData = doc.data();
-    const dataToUpdate = { ...updateData };
-
-    // If a new image is uploaded, remove the old image from Cloudinary
-    if (newImage && existingData.img) {
-      await removeImg(existingData.img);
-      dataToUpdate.img = newImage; // Update with new image
+    
+    // Handle delivery partners array update
+    if (deleveryPartners) {
+      // If array is provided directly use it, otherwise parse it
+      const partners = Array.isArray(deleveryPartners) ? 
+        deleveryPartners : 
+        typeof deleveryPartners === 'string' ? 
+          JSON.parse(deleveryPartners) : 
+          [];
+      
+      updateData.deleveryPartners = partners;
     }
-
-    // Handle delivery partners correctly
-    // Check if delivery partners are in the request body
-    if (req.body.deleveryPartners) {
-      // If it's a string, convert to array (handles single selection)
-      if (typeof req.body.deleveryPartners === 'string') {
-        dataToUpdate.deleveryPartners = [req.body.deleveryPartners];
-      } 
-      // If it's already an array, use as is
-      else if (Array.isArray(req.body.deleveryPartners)) {
-        dataToUpdate.deleveryPartners = req.body.deleveryPartners;
+    
+    // Handle image update if new image is uploaded
+    if (req.file) {
+      // Get the old image URL to delete later
+      const oldImg = outletDoc.data().img;
+      updateData.img = req.file.path;
+      
+      // Remove old image after updating document
+      if (oldImg) {
+        await removeImg(oldImg);
       }
     }
-
-    // Handle location object if present
-    if (req.body.location && typeof req.body.location === 'string') {
-      try {
-        dataToUpdate.location = JSON.parse(req.body.location);
-      } catch (error) {
-        console.error("Error parsing location JSON:", error);
-        return res.status(400).json({ error: "Invalid location data format" });
-      }
-    }
-
-    // Update Firestore document
-    await outletRef.update(dataToUpdate);
-
+    
+    // Update the document
+    await outletRef.update(updateData);
+    
     res.status(200).json({ 
+      status: "success", 
       message: "Outlet updated successfully",
-      outletId: outletId
+      data: { id: outletId, ...updateData }
     });
-  } catch (error) {
-    console.error("Error updating outlet:", error);
-    res.status(500).json({ error: "Internal server error", details: error.message });
+    
+  } catch (err) {
+    // If there was an error and a file was uploaded, delete it
+    if (req.file) {
+      await removeImg(req.file.path);
+    }
+    
+    res.status(400).json({
+      status: "fail",
+      message: "Failed to update outlet",
+      error: err.message
+    });
   }
 };
+
+
 
 const createOutletPartner = async (req, res) => {
  
@@ -448,7 +477,6 @@ const getAllOutletsWithOrderAndPartners = async (req, res) => {
       revenue += orderData.amount || 0; // Handle missing amount
     });
 
-    
     // Fetch all outlet partners from the Delivery_partner collection
     const partners = await db.collection('Delivery_partner').get();
     const totalPartners = partners.size;
@@ -1099,5 +1127,4 @@ export {
   getAllCountInformation,
   updateOutletPartner,
   addDeliveryPartnerToOutlet,
-  updateOutlet
 }
